@@ -6,6 +6,7 @@
     import authRoutes from './routes/auth.js';
     import campaignRoutes from './routes/campaigns.js';
     import adminRoutes from './routes/admin.js';
+    import blogRoutes from './routes/blogs.js';
     // import other routes similarly
 
     const app = express();
@@ -26,5 +27,6 @@
     });
     app.use('/api/campaigns', campaignRoutes);
     app.use('/api/admin', adminRoutes);
+    app.use('/api/blogs', blogRoutes);
 
     export default app;
