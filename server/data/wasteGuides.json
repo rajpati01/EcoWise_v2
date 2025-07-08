@@ -1,0 +1,134 @@
+[
+  {
+    "type": "cardboard",
+    "category": "recyclable",
+    "recyclable": true,
+    "biodegradable": true,
+    "hazardous": false,
+    "instructions": [
+      "Flatten boxes before recycling.",
+      "Keep dry and free of food waste.",
+      "Place in the paper recycling bin."
+    ]
+  },
+  {
+    "type": "glass",
+    "category": "recyclable",
+    "recyclable": true,
+    "biodegradable": false,
+    "hazardous": false,
+    "instructions": [
+      "Rinse glass containers before recycling.",
+      "Avoid mixing with ceramics or mirrors.",
+      "Dispose in designated glass recycling bins."
+    ]
+  },
+  {
+    "type": "metal",
+    "category": "recyclable",
+    "recyclable": true,
+    "biodegradable": false,
+    "hazardous": false,
+    "instructions": [
+      "Empty and clean metal cans.",
+      "Flatten if possible to save space.",
+      "Place in mixed recycling bin."
+    ]
+  },
+  {
+    "type": "paper",
+    "category": "recyclable",
+    "recyclable": true,
+    "biodegradable": true,
+    "hazardous": false,
+    "instructions": [
+      "Avoid glossy, waxed, or food-stained paper.",
+      "Shred sensitive documents before disposal.",
+      "Recycle with other clean paper products."
+    ]
+  },
+  {
+    "type": "plastic",
+    "category": "recyclable",
+    "recyclable": true,
+    "biodegradable": false,
+    "hazardous": false,
+    "instructions": [
+      "Rinse and remove labels when possible.",
+      "Check local plastic recycling codes.",
+      "Do not recycle plastic bags with other plastics."
+    ]
+  },
+  {
+    "type": "trash",
+    "category": "non-recyclable",
+    "recyclable": false,
+    "biodegradable": false,
+    "hazardous": false,
+    "instructions": [
+      "Dispose of in general waste bin.",
+      "Avoid mixing with recyclables.",
+      "Reduce and reuse to minimize landfill waste."
+    ]
+  },
+  {
+    "type": "shoes",
+    "category": "non-recyclable",
+    "recyclable": false,
+    "biodegradable": false,
+    "hazardous": false,
+    "instructions": [
+      "Donate if in wearable condition.",
+      "Check for textile recycling programs.",
+      "Dispose in general waste if worn out."
+    ]
+  },
+  {
+    "type": "clothes",
+    "category": "non-recyclable",
+    "recyclable": false,
+    "biodegradable": false,
+    "hazardous": false,
+    "instructions": [
+      "Donate usable clothes to charity.",
+      "Look for textile recycling drop-offs.",
+      "Avoid throwing clothes in regular bins."
+    ]
+  },
+  {
+    "type": "biological",
+    "category": "biodegradable",
+    "recyclable": false,
+    "biodegradable": true,
+    "hazardous": false,
+    "instructions": [
+      "Compost organic waste like food scraps.",
+      "Keep separate from plastic and metal.",
+      "Use in garden compost bins or municipality services."
+    ]
+  },
+  {
+    "type": "battery",
+    "category": "hazardous",
+    "recyclable": false,
+    "biodegradable": false,
+    "hazardous": true,
+    "instructions": [
+      "Do not dispose in regular trash.",
+      "Drop at electronic waste collection centers.",
+      "Store in a safe, cool place until disposal."
+    ]
+  },
+  {
+    "type": "light bulb",
+    "category": "hazardous",
+    "recyclable": false,
+    "biodegradable": false,
+    "hazardous": true,
+    "instructions": [
+      "Handle broken bulbs with care.",
+      "Recycle at special drop-off locations.",
+      "Do not throw in regular bins due to mercury content."
+    ]
+  }
+]

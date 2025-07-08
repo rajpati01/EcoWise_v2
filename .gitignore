@@ -25,3 +25,7 @@ dist-ssr
 
 # environment variables
 .env
+
+# Ignore split datasets
+data_set/
+data_split/
