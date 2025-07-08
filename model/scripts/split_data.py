@@ -3,7 +3,7 @@ import shutil
 import random
 
 # Original dataset path
-SOURCE_DIR = "../data"
+SOURCE_DIR = "../data_set"
 # Target paths
 TARGET_TRAIN = "../data_split/train"
 TARGET_TEST = "../data_split/test"
