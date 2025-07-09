@@ -29,3 +29,5 @@ dist-ssr
 # Ignore split datasets
 data_set/
 data_split/
+
+uploads/

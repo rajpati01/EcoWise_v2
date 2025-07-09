@@ -247,7 +247,8 @@ const AdminDashboard = () => {
                           <h3 className="font-semibold text-gray-900">{blog.title}</h3>
                           <p className="text-sm text-gray-600 mt-1 line-clamp-2">{blog.excerpt}</p>
                           <div className="flex items-center space-x-4 text-xs text-gray-500 mt-2">
-                            <span>Author ID: {blog.authorId}</span>
+                            <span>Author Name: {blog.authorName}</span>
+                            {/* <span>Author ID: {blog.authorId}</span> */}
                             <span>{format(new Date(blog.createdAt), 'MMM dd, yyyy')}</span>
                           </div>
                         </div>
@@ -298,6 +299,7 @@ const AdminDashboard = () => {
                   <div key={blog._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div className="flex-1">
                       <h4 className="font-medium text-gray-900 truncate">{blog.title}</h4>
+                      <p className="text-sm text-gray-600">Author Name: {blog.authorName}</p>
                       <p className="text-sm text-gray-600">Author ID: {blog.authorId}</p>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -337,7 +339,7 @@ const AdminDashboard = () => {
                           <h3 className="font-semibold text-gray-900">{campaign.title}</h3>
                           <p className="text-sm text-gray-600 mt-1 line-clamp-2">{campaign.description}</p>
                           <div className="flex items-center space-x-4 text-xs text-gray-500 mt-2">
-                            <span>Organizer ID: {campaign.organizerId}</span>
+                            <span>Organizer Name: {campaign.authorName}</span>
                             <span>{campaign.location}</span>
                             <span>{format(new Date(campaign.startDate), 'MMM dd, yyyy')}</span>
                           </div>
@@ -390,7 +392,7 @@ const AdminDashboard = () => {
                     <div className="flex-1">
                       <h4 className="font-medium text-gray-900 truncate">{campaign.title}</h4>
                       <p className="text-sm text-gray-600">
-                        Organizer ID: {campaign.organizerId} • {campaign.location}
+                        Organizer Name: {campaign.authorId} • {campaign.location}
                       </p>
                     </div>
                     <div className="flex items-center space-x-2">

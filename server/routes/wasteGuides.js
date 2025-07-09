@@ -1,9 +1,9 @@
 import express from 'express';
-import { getAllWasteGuides, getWasteGuideByCategory } from '../controllers/wasteGuideController.js';
+import { getAllWasteGuides, getWasteGuideByType } from '../controllers/wasteGuideController.js';
 
 const router = express.Router();
 
 router.get('/', getAllWasteGuides);
-router.get('/:category', getWasteGuideByCategory);
+router.get('/:type', getWasteGuideByType);
 
 export default router;

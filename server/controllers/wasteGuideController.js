@@ -9,7 +9,7 @@ export const getAllWasteGuides = async (req, res) => {
   }
 };
 
-export const getWasteGuideByCategory = async (req, res) => {
+export const getWasteGuideByType = async (req, res) => {
   try {
     const guide = await WasteGuide.findOne({ category: req.params.category });
     if (!guide) return res.status(404).json({ message: 'Not found' });
