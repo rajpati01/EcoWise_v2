@@ -51,7 +51,7 @@ const wasteGuides = {
       "Do not dispose in regular trash.",
       "Contact local waste authority for proper disposal.",
     ],
-    points: 0,
+    points: 10,
   },
   unknown: {
     instructions: ["Unable to classify. Please try with a clearer image."],
@@ -89,7 +89,12 @@ const WasteClassifier = () => {
   const classifyMutation = useMutation({
     mutationFn: (file) => wasteService.classifyWaste(file),
     onSuccess: (data) => {
-      setClassificationResult(data);
+      setClassificationResult({
+        category: data.type,
+        confidence: data.confidence,
+        instructions: data.instructions,
+        pointsEarned: data.pointsEarned,
+      });
       // updateUser({ ecoPoints: (updateUser.ecoPoints || 0) + data.pointsEarned });
       // Update user eco points
       updateUser?.((prev) => ({
@@ -109,6 +114,7 @@ const WasteClassifier = () => {
       queryClient.invalidateQueries({
         queryKey: ["/api/waste-classifications"],
       });
+      console.log(data);
     },
     onError: (error) => {
       toast({
@@ -137,27 +143,27 @@ const WasteClassifier = () => {
     multiple: false,
   });
 
-  // const handleClassify = () => {
-  //   if (selectedFile) {
-  //     classifyMutation.mutate(selectedFile);
-  //   }
-  // };
-
-  const handleClassify = async () => {
-    if (!selectedFile) return;
-    const result = await simulateClassification(selectedFile);
-    setClassificationResult(result);
-
-    updateUser?.((prev) => ({
-      ...prev,
-      ecoPoints: (prev?.ecoPoints || 0) + result.pointsEarned,
-    }));
-
-    toast({
-      title: "Classification Complete!",
-      description: `You earned ${result.pointsEarned} eco points.`,
-    });
+  const handleClassify = () => {
+    if (selectedFile) {
+      classifyMutation.mutate(selectedFile);
+    }
   };
+
+  // const handleClassify = async () => {
+  //   if (!selectedFile) return;
+  //   const result = await simulateClassification(selectedFile);
+  //   setClassificationResult(result);
+
+  //   updateUser?.((prev) => ({
+  //     ...prev,
+  //     ecoPoints: (prev?.ecoPoints || 0) + result.pointsEarned,
+  //   }));
+
+  //   toast({
+  //     title: "Classification Complete!",
+  //     description: `You earned ${result.pointsEarned} eco points.`,
+  //   });
+  // };
 
   const handleReset = () => {
     setSelectedFile(null);
