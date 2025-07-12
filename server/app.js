@@ -4,6 +4,8 @@
     import './config/passport.js';
 
     import authRoutes from './routes/auth.js';
+    import campaignRoutes from './routes/campaigns.js';
+    import adminRoutes from './routes/admin.js';
     // import other routes similarly
 
     const app = express();
@@ -22,5 +24,7 @@
     app.get('/api/test', (req, res) => {
     res.send('EcoWise backend is running 🚀');
     });
+    app.use('/api/campaigns', campaignRoutes);
+    app.use('/api/admin', adminRoutes);
 
     export default app;

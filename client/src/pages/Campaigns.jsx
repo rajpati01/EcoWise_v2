@@ -30,6 +30,7 @@ const Campaigns = () => {
 
   const { data: campaigns = [], isLoading } = useQuery({
     queryKey: ['/api/campaigns'],
+    queryFn: () => campaignService.getCampaigns(),
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 
@@ -53,7 +54,7 @@ const Campaigns = () => {
     onError: (error) => {
       toast({
         title: "Failed to Create Campaign",
-        description: error.message,
+        description: error?.response?.data?.message || error.message,
         variant: "destructive",
       });
     },

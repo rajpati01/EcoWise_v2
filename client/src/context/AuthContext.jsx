@@ -1,11 +1,13 @@
-import { createContext, useContext, useReducer, useEffect } from 'react';
-import { authService } from '../services/authService';
+import { createContext, useContext, useReducer, useEffect } from "react";
+import { authService } from "../services/authService";
+import { useLocation } from "wouter";
+import { act } from "react";
 
 export const AuthContext = createContext();
 
 const authReducer = (state, action) => {
   switch (action.type) {
-    case 'LOGIN_SUCCESS':
+    case "LOGIN_SUCCESS":
       return {
         ...state,
         user: action.payload.user,
@@ -13,7 +15,7 @@ const authReducer = (state, action) => {
         isAuthenticated: true,
         loading: false,
       };
-    case 'LOGOUT':
+    case "LOGOUT":
       return {
         ...state,
         user: null,
@@ -21,12 +23,12 @@ const authReducer = (state, action) => {
         isAuthenticated: false,
         loading: false,
       };
-    case 'SET_LOADING':
+    case "SET_LOADING":
       return {
         ...state,
         loading: action.payload,
       };
-    case 'UPDATE_USER':
+    case "UPDATE_USER":
       return {
         ...state,
         user: { ...state.user, ...action.payload },
@@ -45,77 +47,87 @@ const initialState = {
 
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
+  const [, setLocation] = useLocation();
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
-    
+    const token = localStorage.getItem("token");
+    const user = localStorage.getItem("user");
+
     if (token && user) {
       try {
         const parsedUser = JSON.parse(user);
         dispatch({
-          type: 'LOGIN_SUCCESS',
-          payload: { user: parsedUser, token }
+          type: "LOGIN_SUCCESS",
+          payload: { user: parsedUser, token },
         });
       } catch (error) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
       }
     }
-    
-    dispatch({ type: 'SET_LOADING', payload: false });
+
+    dispatch({ type: "SET_LOADING", payload: false });
   }, []);
 
   const login = async (email, password) => {
     try {
-      dispatch({ type: 'SET_LOADING', payload: true });
+      dispatch({ type: "SET_LOADING", payload: true });
       const response = await authService.login(email, password);
-      
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
-      
+
+      localStorage.setItem("token", response.token);
+      localStorage.setItem("user", JSON.stringify(response.user));
+
       dispatch({
-        type: 'LOGIN_SUCCESS',
-        payload: response
+        type: "LOGIN_SUCCESS",
+        payload: response,
       });
-      
+
+      // Role-based redirect
+      // if (response.user.role === "admin") {
+      //   setLocation("/admin");
+      // } else if (response.user.role === "user") {
+      //   setLocation("/profile");
+      // } else {
+      //   throw new Error("Login failed: invalid user role");
+      // }
+
       return response;
     } catch (error) {
-      dispatch({ type: 'SET_LOADING', payload: false });
+      dispatch({ type: "SET_LOADING", payload: false });
       throw error;
     }
   };
 
   const register = async (userData) => {
     try {
-      dispatch({ type: 'SET_LOADING', payload: true });
+      dispatch({ type: "SET_LOADING", payload: true });
       const response = await authService.register(userData);
-      
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
-      
+
+      localStorage.setItem("token", response.token);
+      localStorage.setItem("user", JSON.stringify(response.user));
+
       dispatch({
-        type: 'LOGIN_SUCCESS',
-        payload: response
+        type: "LOGIN_SUCCESS",
+        payload: response,
       });
-      
+
       return response;
     } catch (error) {
-      dispatch({ type: 'SET_LOADING', payload: false });
+      dispatch({ type: "SET_LOADING", payload: false });
       throw error;
     }
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    dispatch({ type: 'LOGOUT' });
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    dispatch({ type: "LOGOUT" });
   };
 
   const updateUser = (userData) => {
     const updatedUser = { ...state.user, ...userData };
-    localStorage.setItem('user', JSON.stringify(updatedUser));
-    dispatch({ type: 'UPDATE_USER', payload: userData });
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+    dispatch({ type: "UPDATE_USER", payload: userData });
   };
 
   const value = {
@@ -126,17 +138,13 @@ export const AuthProvider = ({ children }) => {
     updateUser,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };

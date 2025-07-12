@@ -241,7 +241,7 @@ const AdminDashboard = () => {
               ) : (
                 <div className="space-y-4">
                   {pendingBlogs.map((blog) => (
-                    <div key={blog.id} className="border rounded-lg p-4 space-y-3">
+                    <div key={blog._id} className="border rounded-lg p-4 space-y-3">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <h3 className="font-semibold text-gray-900">{blog.title}</h3>
@@ -259,7 +259,7 @@ const AdminDashboard = () => {
                           size="sm"
                           variant="outline"
                           className="text-green-600 border-green-200 hover:bg-green-50"
-                          onClick={() => approveBlogMutation.mutate(blog.id)}
+                          onClick={() => approveBlogMutation.mutate(blog._id)}
                           disabled={approveBlogMutation.isPending}
                         >
                           <CheckCircle className="h-4 w-4 mr-1" />
@@ -269,7 +269,7 @@ const AdminDashboard = () => {
                           size="sm"
                           variant="outline"
                           className="text-red-600 border-red-200 hover:bg-red-50"
-                          onClick={() => rejectBlogMutation.mutate(blog.id)}
+                          onClick={() => rejectBlogMutation.mutate(blog._id)}
                           disabled={rejectBlogMutation.isPending}
                         >
                           <XCircle className="h-4 w-4 mr-1" />
@@ -295,7 +295,7 @@ const AdminDashboard = () => {
             <CardContent>
               <div className="space-y-3">
                 {allBlogs.slice(0, 10).map((blog) => (
-                  <div key={blog.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div key={blog._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div className="flex-1">
                       <h4 className="font-medium text-gray-900 truncate">{blog.title}</h4>
                       <p className="text-sm text-gray-600">Author ID: {blog.authorId}</p>
@@ -331,7 +331,7 @@ const AdminDashboard = () => {
               ) : (
                 <div className="space-y-4">
                   {pendingCampaigns.map((campaign) => (
-                    <div key={campaign.id} className="border rounded-lg p-4 space-y-3">
+                    <div key={campaign._id} className="border rounded-lg p-4 space-y-3">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <h3 className="font-semibold text-gray-900">{campaign.title}</h3>
@@ -350,7 +350,7 @@ const AdminDashboard = () => {
                           size="sm"
                           variant="outline"
                           className="text-green-600 border-green-200 hover:bg-green-50"
-                          onClick={() => approveCampaignMutation.mutate(campaign.id)}
+                          onClick={() => approveCampaignMutation.mutate(campaign._id)}
                           disabled={approveCampaignMutation.isPending}
                         >
                           <CheckCircle className="h-4 w-4 mr-1" />
@@ -360,7 +360,7 @@ const AdminDashboard = () => {
                           size="sm"
                           variant="outline"
                           className="text-red-600 border-red-200 hover:bg-red-50"
-                          onClick={() => rejectCampaignMutation.mutate(campaign.id)}
+                          onClick={() => rejectCampaignMutation.mutate(campaign._id)}
                           disabled={rejectCampaignMutation.isPending}
                         >
                           <XCircle className="h-4 w-4 mr-1" />
@@ -386,7 +386,7 @@ const AdminDashboard = () => {
             <CardContent>
               <div className="space-y-3">
                 {allCampaigns.slice(0, 10).map((campaign) => (
-                  <div key={campaign.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div key={campaign._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div className="flex-1">
                       <h4 className="font-medium text-gray-900 truncate">{campaign.title}</h4>
                       <p className="text-sm text-gray-600">
