@@ -72,7 +72,7 @@ class ApiService {
 
   async uploadFile(endpoint, file, additionalData = {}) {
     const formData = new FormData();
-    formData.append('image', file);
+    formData.append('file', file);
 
     Object.keys(additionalData).forEach(key => {
       formData.append(key, additionalData[key]);

@@ -7,6 +7,9 @@
     import campaignRoutes from './routes/campaigns.js';
     import adminRoutes from './routes/admin.js';
     import blogRoutes from './routes/blogs.js';
+    import wasteGuideRoutes from './routes/wasteGuides.js';
+    import wasteRoutes from './routes/wasteRoutes.js';
+    import ecoPointsRoutes from './routes/ecopoints.js';
     // import other routes similarly
 
     const app = express();
@@ -28,5 +31,8 @@
     app.use('/api/campaigns', campaignRoutes);
     app.use('/api/admin', adminRoutes);
     app.use('/api/blogs', blogRoutes);
+    app.use('/api/waste-guides', wasteGuideRoutes);
+    app.use('/api/waste', wasteRoutes);
+    app.use("/api/ecopoints", ecoPointsRoutes);
 
     export default app;
