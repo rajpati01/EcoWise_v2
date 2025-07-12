@@ -31,3 +31,7 @@ data_set/
 data_split/
 
 uploads/
+
+
+__pycache__/
+*.py[cod]
