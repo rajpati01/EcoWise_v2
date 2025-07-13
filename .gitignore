@@ -35,5 +35,3 @@ uploads/
 
 __pycache__/
 *.py[cod]
-
-model/models/waste_classifier.h5
