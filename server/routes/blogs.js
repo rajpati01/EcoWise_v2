@@ -4,7 +4,8 @@ import {
   createBlog,
   getBlogs,
   approveBlog,
-  rejectBlog
+  rejectBlog,
+  getBlogById 
 } from '../controllers/blogController.js';
 import  isAdmin  from '../middleware/admin.js';
 
@@ -12,6 +13,9 @@ const router = express.Router();
 
 // Public
 router.get('/', getBlogs);
+
+// Get blog by ID
+router.get('/:id', getBlogById);
 
 // Authenticated
 router.post('/', protect, createBlog);

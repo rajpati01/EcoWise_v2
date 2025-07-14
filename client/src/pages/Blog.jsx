@@ -280,7 +280,7 @@ const Blog = () => {
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {featuredBlogs.map((blog) => (
-              <BlogCard key={blog.id} blog={blog} />
+              <BlogCard key={blog._id} blog={blog} />
             ))}
           </div>
         </div>
@@ -308,7 +308,7 @@ const Blog = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {(recentBlogs.length > 0 ? recentBlogs : approvedBlogs).map(
               (blog) => (
-                <BlogCard key={blog.id} blog={blog} />
+                <BlogCard key={blog._id} blog={blog} />
               )
             )}
           </div>

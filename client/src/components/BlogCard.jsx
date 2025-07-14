@@ -65,7 +65,7 @@ const BlogCard = ({ blog, showStatus = false }) => {
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-1">
               <User className="h-3 w-3" />
-              <span>Author #{blog.authorId}</span>
+              <span>Author {blog.authorName}</span>
             </div>
             <div className="flex items-center space-x-1">
               <Calendar className="h-3 w-3" />
@@ -75,7 +75,7 @@ const BlogCard = ({ blog, showStatus = false }) => {
         </div>
 
         {/* Read More Button */}
-        <Link href={`/blog/${blog.id}`}>
+        <Link href={`/blog/${blog._id}`}>
           <Button variant="outline" className="w-full group">
             Read More
             <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />

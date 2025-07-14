@@ -19,6 +19,7 @@ import Leaderboard from "./pages/Leaderboard";
 import Profile from "./pages/Profile";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import NotFound from "./pages/not-found";
+import BlogDetail from "./pages/BlogDetail";
 
 import './App.css'
 
@@ -44,6 +45,7 @@ function Router() {
               <Profile />
             {/* </ProtectedRoute> */}
           </Route>
+          <Route path="/blog/:id" component={BlogDetail} />
           <Route path="/admin">
             {/* <ProtectedRoute requireAdmin> */}
               <AdminDashboard />

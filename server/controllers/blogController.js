@@ -33,6 +33,14 @@ export const getBlogs = async (req, res) => {
   }
 };
 
+// get blog by ID
+export const getBlogById = async (req, res) => {
+  const { id } = req.params;
+  const blog = await Blog.findOne({ _id: id });
+  if (!blog) return res.status(404).json({ error: "Blog not found" });
+  res.json(blog);
+};
+
 // Approve blog (admin only)
 export const approveBlog = async (req, res) => {
   try {

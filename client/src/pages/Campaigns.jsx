@@ -261,7 +261,7 @@ const Campaigns = () => {
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {currentCampaigns.map(campaign => (
-                <CampaignCard key={campaign.id} campaign={campaign} />
+                <CampaignCard key={campaign._id} campaign={campaign} />
               ))}
             </div>
           )}
@@ -279,7 +279,7 @@ const Campaigns = () => {
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {upcomingCampaigns.map(campaign => (
-                <CampaignCard key={campaign.id} campaign={campaign} />
+                <CampaignCard key={campaign._id} campaign={campaign} />
               ))}
             </div>
           )}
