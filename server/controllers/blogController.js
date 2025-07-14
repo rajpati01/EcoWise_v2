@@ -22,12 +22,11 @@ export const createBlog = async (req, res) => {
 // Get all blogs, optionally filter by status
 export const getBlogs = async (req, res) => {
   try {
-    const status = req.query.status || ""; // e.g. 'pending'
+    const status = req.query.status || "";
     let query = {};
-    if (status) {
-      query.status = status;
-    }
+    if (status) query.status = status;
     const blogs = await Blog.find(query).sort({ createdAt: -1 });
+
     res.json(blogs);
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -32,12 +32,11 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      await login(formData.email, formData.password);
+      const response = await login(formData.email, formData.password);
       toast({
         title: "Login Successful",
         description: "Welcome back to EcoWise!",
       });
-      setLocation('/profile');
     } catch (error) {
       toast({
         title: "Login Failed",

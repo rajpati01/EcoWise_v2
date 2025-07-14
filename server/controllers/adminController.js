@@ -1,5 +1,5 @@
 import Campaign from '../models/Campaign.js';
-// import Blog from '../models/Blog.js';
+import Blog from '../models/Blog.js';
 
 // Approve Campaign
 export const approveCampaign = async (req, res) => {

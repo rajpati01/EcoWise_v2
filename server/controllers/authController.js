@@ -35,11 +35,12 @@ export const registerUser = async (req, res) => {
 
     const token = generateToken(user._id);
     res.status(201).json({
-      _id: user._id,
-      name: user.name,
-      username: user.username,
-      email: user.email,
-      role: user.role,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
       token,
     });
   } catch (error) {
@@ -78,10 +79,12 @@ export const loginUser = async (req, res) => {
 
     const token = generateToken(user._id);
     res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
       token,
     });
   } catch (error) {

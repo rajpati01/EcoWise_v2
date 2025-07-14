@@ -1,51 +1,79 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { blogService } from '../services/blogService';
-import { useAuth } from '../hooks/useAuth';
-import BlogCard from '../components/BlogCard';
-import { Button } from '../components/ui/button'; 
-import { Input } from '../components/ui/input';
-import { Textarea } from '../components/ui/textarea';
-import { Label } from '../components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Badge } from '../components/ui/badge';
-import { useToast } from '../hooks/use-toast'; 
-import { Plus, Search, BookOpen, PenTool, TrendingUp, Loader2 } from 'lucide-react';
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { blogService } from "../services/blogService";
+import { useAuth } from "../hooks/useAuth";
+import BlogCard from "../components/BlogCard";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Textarea } from "../components/ui/textarea";
+import { Label } from "../components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../components/ui/dialog";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../components/ui/tabs";
+import { Badge } from "../components/ui/badge";
+import { useToast } from "../hooks/use-toast";
+import {
+  Plus,
+  Search,
+  BookOpen,
+  PenTool,
+  TrendingUp,
+  Loader2,
+} from "lucide-react";
 
 const Blog = () => {
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newBlog, setNewBlog] = useState({
-    title: '',
-    content: '',
-    excerpt: '',
-    tags: '',
+    title: "",
+    content: "",
+    excerpt: "",
+    tags: "",
   });
 
   const { data: blogs = [], isLoading } = useQuery({
-    queryKey: ['/api/blogs'],
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    queryKey: ["/api/blogs"],
+    queryFn: () => blogService.getBlogs("approved"), 
+    staleTime: 2 * 60 * 1000,
   });
 
   const createMutation = useMutation({
-    mutationFn: (blogData) => blogService.createBlog({
-      ...blogData,
-      tags: blogData.tags.split(',').map(tag => tag.trim()).filter(Boolean)
-    }),
+    mutationFn: (blogData) =>
+      blogService.createBlog({
+        ...blogData,
+        tags: blogData.tags
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter(Boolean),
+      }),
     onSuccess: () => {
       setDialogOpen(false);
       setNewBlog({
-        title: '',
-        content: '',
-        excerpt: '',
-        tags: '',
+        title: "",
+        content: "",
+        excerpt: "",
+        tags: "",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/blogs'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/blogs"] });
       toast({
         title: "Blog Created!",
         description: "Your blog post has been submitted for approval.",
@@ -62,9 +90,9 @@ const Blog = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setNewBlog(prev => ({
+    setNewBlog((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -73,13 +101,19 @@ const Blog = () => {
     createMutation.mutate(newBlog);
   };
 
-  const filteredBlogs = blogs.filter(blog =>
-    blog.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    blog.excerpt.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (blog.tags && blog.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())))
+  const filteredBlogs = blogs.filter(
+    (blog) =>
+      blog.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      blog.excerpt.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (blog.tags &&
+        blog.tags.some((tag) =>
+          tag.toLowerCase().includes(searchTerm.toLowerCase())
+        ))
   );
 
-  const approvedBlogs = filteredBlogs.filter(blog => blog.status === 'approved');
+  const approvedBlogs = filteredBlogs.filter(
+    (blog) => blog.status === "approved"
+  );
   const featuredBlogs = approvedBlogs.slice(0, 3);
   const recentBlogs = approvedBlogs.slice(3);
 
@@ -100,8 +134,8 @@ const Blog = () => {
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-bold text-gray-900">EcoWise Blog</h1>
         <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-          Discover articles, tips, and insights on sustainable living, waste management, 
-          and environmental protection from our community.
+          Discover articles, tips, and insights on sustainable living, waste
+          management, and environmental protection from our community.
         </p>
       </div>
 
@@ -190,7 +224,7 @@ const Blog = () => {
                       Publishing...
                     </>
                   ) : (
-                    'Publish Article'
+                    "Publish Article"
                   )}
                 </Button>
               </form>
@@ -204,28 +238,34 @@ const Blog = () => {
         <Card>
           <CardContent className="p-6 text-center">
             <BookOpen className="h-8 w-8 text-primary mx-auto mb-2" />
-            <div className="text-2xl font-bold text-gray-900">{approvedBlogs.length}</div>
+            <div className="text-2xl font-bold text-gray-900">
+              {approvedBlogs.length}
+            </div>
             <div className="text-sm text-gray-600">Published Articles</div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-6 text-center">
             <PenTool className="h-8 w-8 text-secondary mx-auto mb-2" />
             <div className="text-2xl font-bold text-secondary">
-              {new Set(approvedBlogs.map(b => b.authorId)).size}
+              {new Set(approvedBlogs.map((b) => b.authorId)).size}
             </div>
             <div className="text-sm text-gray-600">Contributors</div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-6 text-center">
             <TrendingUp className="h-8 w-8 text-accent mx-auto mb-2" />
             <div className="text-2xl font-bold text-accent">
-              {approvedBlogs.filter(b => 
-                new Date(b.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-              ).length}
+              {
+                approvedBlogs.filter(
+                  (b) =>
+                    new Date(b.createdAt) >
+                    new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+                ).length
+              }
             </div>
             <div className="text-sm text-gray-600">This Week</div>
           </CardContent>
@@ -235,9 +275,11 @@ const Blog = () => {
       {/* Featured Articles */}
       {featuredBlogs.length > 0 && (
         <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-gray-900">Featured Articles</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Featured Articles
+          </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredBlogs.map(blog => (
+            {featuredBlogs.map((blog) => (
               <BlogCard key={blog.id} blog={blog} />
             ))}
           </div>
@@ -247,22 +289,28 @@ const Blog = () => {
       {/* All Articles */}
       <div className="space-y-6">
         <h2 className="text-2xl font-bold text-gray-900">All Articles</h2>
-        
+
         {approvedBlogs.length === 0 ? (
           <Card>
             <CardContent className="text-center py-12">
               <BookOpen className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Articles Found</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No Articles Found
+              </h3>
               <p className="text-gray-600">
-                {searchTerm ? 'Try adjusting your search terms.' : 'Be the first to write an article!'}
+                {searchTerm
+                  ? "Try adjusting your search terms."
+                  : "Be the first to write an article!"}
               </p>
             </CardContent>
           </Card>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {(recentBlogs.length > 0 ? recentBlogs : approvedBlogs).map(blog => (
-              <BlogCard key={blog.id} blog={blog} />
-            ))}
+            {(recentBlogs.length > 0 ? recentBlogs : approvedBlogs).map(
+              (blog) => (
+                <BlogCard key={blog.id} blog={blog} />
+              )
+            )}
           </div>
         )}
       </div>
@@ -278,19 +326,21 @@ const Blog = () => {
               {Array.from(
                 new Set(
                   approvedBlogs
-                    .flatMap(blog => blog.tags || [])
+                    .flatMap((blog) => blog.tags || [])
                     .filter(Boolean)
                 )
-              ).slice(0, 15).map(tag => (
-                <Badge
-                  key={tag}
-                  variant="outline"
-                  className="cursor-pointer hover:bg-primary hover:text-white"
-                  onClick={() => setSearchTerm(tag)}
-                >
-                  {tag}
-                </Badge>
-              ))}
+              )
+                .slice(0, 15)
+                .map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="outline"
+                    className="cursor-pointer hover:bg-primary hover:text-white"
+                    onClick={() => setSearchTerm(tag)}
+                  >
+                    {tag}
+                  </Badge>
+                ))}
             </div>
           </CardContent>
         </Card>
@@ -300,9 +350,12 @@ const Blog = () => {
         <Card className="bg-primary/5 border-primary/20">
           <CardContent className="text-center py-8">
             <PenTool className="h-12 w-12 text-primary mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Share Your Knowledge</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Share Your Knowledge
+            </h3>
             <p className="text-gray-600 mb-4">
-              Join our community to write articles and share your eco-friendly tips!
+              Join our community to write articles and share your eco-friendly
+              tips!
             </p>
             <Button className="bg-primary hover:bg-primary/90">
               Get Started

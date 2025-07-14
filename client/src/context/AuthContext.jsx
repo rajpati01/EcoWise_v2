@@ -77,19 +77,26 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("token", response.token);
       localStorage.setItem("user", JSON.stringify(response.user));
 
+      console.log("🔐 Login response:", response);
+
       dispatch({
         type: "LOGIN_SUCCESS",
         payload: response,
       });
 
       // Role-based redirect
-      // if (response.user.role === "admin") {
-      //   setLocation("/admin");
-      // } else if (response.user.role === "user") {
-      //   setLocation("/profile");
-      // } else {
-      //   throw new Error("Login failed: invalid user role");
-      // }
+      if (response.user.role === "admin") {
+        setLocation("/admin");
+      } else if (response.user.role === "user") {
+        setLocation("/profile");
+      } else {
+        toast({
+          title: "Login Warning",
+          description: "Logged in, but user role is not recognized.",
+          variant: "warning",
+        });
+        setLocation("/");
+      }
 
       return response;
     } catch (error) {

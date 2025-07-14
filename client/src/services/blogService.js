@@ -1,7 +1,7 @@
-import { apiService } from './api';
+import { apiService } from "./api";
 
 class BlogService {
-  async getBlogs(status = 'approved') {
+  async getBlogs(status) {
     return apiService.get(`/blogs?status=${status}`);
   }
 
@@ -10,7 +10,7 @@ class BlogService {
   }
 
   async createBlog(blogData) {
-    return apiService.post('/blogs', blogData);
+    return apiService.post("/blogs", blogData);
   }
 
   async updateBlog(id, blogData) {
