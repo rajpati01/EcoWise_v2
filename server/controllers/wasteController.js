@@ -1,25 +1,39 @@
-import WasteClassification from '../models/WasteClassification.js';
-import EcoPoints from '../models/ecopoints.js';
-import { classifyImage } from '../utils/classifyImage.js'; // fake or real classifier
+import WasteClassification from "../models/WasteClassification.js";
+import EcoPoints from "../models/ecopoints.js";
+import axios from "axios";
+import FormData from "form-data";
+import fs from "fs";
 
 export const classifyWaste = async (req, res) => {
   try {
     const user = req.user;
     const file = req.file;
+    // console.log("File received:", req.file);
 
     if (!file) {
-      return res.status(400).json({ message: 'Image file is required.' });
+      return res.status(400).json({ message: "Image file is required." });
     }
 
-    // Fake classifier — replace with actual TensorFlow later
-    const { category, confidence, instructions, pointsEarned } = classifyImage(file);
+    // Prepare image for FastAPI
+    const formData = new FormData();
+    formData.append("file", fs.createReadStream(file.path), file.filename);
+
+    // Call FastAPI (adjust URL as needed)
+    const aiRes = await axios.post(
+      `${process.env.VITE_AI_API_URL}/api/classify`,
+      formData,
+      { headers: formData.getHeaders() }
+    );
+
+    const ai = aiRes.data;
+    // ai = { type, confidence, instructions, category, pointsEarned, filename }
 
     const classification = await WasteClassification.create({
       user: user._id,
       imageUrl: file.path,
-      category,
-      confidence,
-      pointsEarned
+      category: ai.category,
+      confidence: ai.confidence,
+      pointsEarned: ai.pointsEarned,
     });
 
     //  Update EcoPoints
@@ -28,32 +42,41 @@ export const classifyWaste = async (req, res) => {
     if (!ecoPoints) {
       ecoPoints = new EcoPoints({
         user: user._id,
-        totalPoints: pointsEarned,
-        history: [{
-          action: 'classification',
-          points: pointsEarned,
-          description: `Classified ${category}`
-        }]
+        totalPoints: ai.pointsEarned,
+        history: [
+          {
+            action: "classification",
+            points: ai.pointsEarned,
+            description: `Classified ${ai.category}`,
+          },
+        ],
       });
     } else {
-      ecoPoints.totalPoints += pointsEarned;
+      ecoPoints.totalPoints += ai.pointsEarned;
       ecoPoints.history.unshift({
-        action: 'classification',
-        points: pointsEarned,
-        description: `Classified ${category}`
+        action: "classification",
+        points: ai.pointsEarned,
+        description: `Classified ${ai.category}`,
       });
     }
 
     await ecoPoints.save();
 
-    res.status(200).json({
-      category,
-      confidence,
-      instructions,
-      pointsEarned
-    });
+    res.status(200).json(ai); // Send back all AI info for frontend
   } catch (error) {
-    console.error('Classification error:', error);
-    res.status(500).json({ message: 'Classification failed', error });
+    console.error("Classification error:", error);
+    res.status(500).json({ message: "Classification failed", error: error?.message || error });
+  }
+};
+
+// Get all classifications for the logged-in user
+export const getUserClassifications = async (req, res) => {
+  try {
+    const items = await WasteClassification.find({ user: req.user._id }).sort({
+      createdAt: -1,
+    });
+    res.json(items);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to get classifications", error });
   }
 };

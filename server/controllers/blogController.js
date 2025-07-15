@@ -33,6 +33,17 @@ export const getBlogs = async (req, res) => {
   }
 };
 
+// Get blogs created by the authenticated user
+// This is used in the Profile page to show user's blogs
+export const getUserBlogs = async (req, res) => {
+  try {
+    const blogs = await Blog.find({ authorId: req.user._id }); // or createdBy
+    res.json(blogs);
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 // get blog by ID
 export const getBlogById = async (req, res) => {
   const { id } = req.params;

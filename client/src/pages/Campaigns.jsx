@@ -15,7 +15,7 @@ import { Plus, Search, Calendar, MapPin, Users, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 const Campaigns = () => {
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
@@ -227,7 +227,7 @@ const Campaigns = () => {
           <CardContent className="p-6 text-center">
             <Users className="h-8 w-8 text-secondary mx-auto mb-2" />
             <div className="text-2xl font-bold text-secondary">
-              {activeCampaigns.reduce((sum, c) => sum + c.participantCount, 0)}
+              {activeCampaigns.reduce((sum, c) => sum + c.participantCount, 0) ?? 0}
             </div>
             <div className="text-sm text-gray-600">Total Participants</div>
           </CardContent>
@@ -261,7 +261,7 @@ const Campaigns = () => {
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {currentCampaigns.map(campaign => (
-                <CampaignCard key={campaign._id} campaign={campaign} />
+                <CampaignCard key={campaign._id} campaign={campaign} user={user}/>
               ))}
             </div>
           )}
@@ -279,7 +279,7 @@ const Campaigns = () => {
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {upcomingCampaigns.map(campaign => (
-                <CampaignCard key={campaign._id} campaign={campaign} />
+                <CampaignCard key={campaign._id} campaign={campaign} user={user} />
               ))}
             </div>
           )}

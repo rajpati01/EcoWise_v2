@@ -9,6 +9,11 @@ class CampaignService {
     return apiService.get(`/campaigns/${id}`);
   }
 
+  // Fetch campaigns where the user is a participant
+  async getMyCampaigns() {
+  return apiService.get("/campaigns/my");
+}
+
   async createCampaign(campaignData) {
     return apiService.post('/campaigns', campaignData);
   }

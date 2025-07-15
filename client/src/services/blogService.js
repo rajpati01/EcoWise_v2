@@ -9,6 +9,12 @@ class BlogService {
     return apiService.get(`/blogs/${id}`);
   }
 
+  // Get blogs created by the authenticated user
+  // This is used in the Profile page to show user's blogs
+  async getMyBlogs() {
+    return apiService.get("/blogs/my");
+  }
+
   async createBlog(blogData) {
     return apiService.post("/blogs", blogData);
   }

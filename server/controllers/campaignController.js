@@ -1,4 +1,5 @@
 import Campaign from "../models/Campaign.js";
+import User from "../models/User.js";
 
 export const createCampaign = async (req, res) => {
   try {
@@ -18,7 +19,7 @@ export const createCampaign = async (req, res) => {
       status: "pending",
     });
     
-    console.log("Creating campaign by:", req.user);
+    // console.log("Creating campaign by:", req.user);
 
     await campaign.save();
     res.status(201).json(campaign);
@@ -41,11 +42,24 @@ export const getAllCampaigns = async (req, res) => {
   }
 };
 
+// Fetch campaigns created by the user
+export const getUserCampaigns = async (req, res) => {
+  try {
+    const campaigns = await Campaign.find({ createdBy: req.user._id });
+    res.json(campaigns);
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 export const joinCampaign = async (req, res) => {
   try {
     const campaign = await Campaign.findById(req.params.id);
     if (!campaign)
       return res.status(404).json({ message: "Campaign not found" });
+
+    // Defensive: ensure .participants is an array
+    if (!Array.isArray(campaign.participants)) campaign.participants = [];
 
     if (campaign.participants.includes(req.user._id)) {
       return res.status(400).json({ message: "Already joined" });
@@ -53,6 +67,13 @@ export const joinCampaign = async (req, res) => {
 
     campaign.participants.push(req.user._id);
     await campaign.save();
+
+    // Increment user points
+    await User.findByIdAndUpdate(
+      req.user._id,
+      { $inc: { points: 10 } }, 
+      { new: true }
+    );
 
     res.json({ message: "Joined campaign successfully" });
   } catch (err) {

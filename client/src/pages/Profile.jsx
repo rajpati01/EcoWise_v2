@@ -1,23 +1,43 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '../hooks/useAuth';
-import { authService } from '../services/authService';
-import { wasteService } from '../services/wasteService';
-import { blogService } from '../services/blogService';
-import { campaignService } from '../services/campaignService';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
-import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { Badge } from '../components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { useToast } from '../hooks/use-toast';
-import { 
-  User, Mail, Award, Camera, BookOpen, Users, 
-  TrendingUp, Calendar, Edit, Save, X, Loader2 
-} from 'lucide-react';
-import { format } from 'date-fns';
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "../hooks/useAuth";
+import { authService } from "../services/authService";
+import { wasteService } from "../services/wasteService";
+import { blogService } from "../services/blogService";
+import { campaignService } from "../services/campaignService";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
+import { Badge } from "../components/ui/badge";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../components/ui/tabs";
+import { useToast } from "../hooks/use-toast";
+import {
+  User,
+  Mail,
+  Award,
+  Camera,
+  BookOpen,
+  Users,
+  TrendingUp,
+  Calendar,
+  Edit,
+  Save,
+  X,
+  Loader2,
+} from "lucide-react";
+import { format } from "date-fns";
 
 const Profile = () => {
   const { user, updateUser } = useAuth();
@@ -25,33 +45,47 @@ const Profile = () => {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
-    username: user?.username || '',
-    email: user?.email || '',
+    username: user?.username || "",
+    email: user?.email || "",
   });
 
   // Fetch user's data
   const { data: classifications = [] } = useQuery({
-    queryKey: ['/api/waste-classifications'],
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-
-  const { data: userBlogs = [] } = useQuery({
-    queryKey: ['/api/blogs', 'user'],
-    queryFn: async () => {
-      const allBlogs = await blogService.getBlogs('');
-      return allBlogs.filter(blog => blog.authorId === user?.id);
-    },
-    enabled: !!user?.id,
+    queryKey: ["/api/waste-classifications"],
     staleTime: 5 * 60 * 1000,
   });
 
+  // const { data: classifications = [] } = useQuery({
+  //   queryKey: ["waste-classifications", user?._id],
+  //   queryFn: () => wasteService.getClassifications(user?._id),
+  //   enabled: !!user?._id,
+  // });
+
+  const { data: userBlogs = [] } = useQuery({
+    queryKey: ["/api/blogs/my"],
+    queryFn: () => blogService.getMyBlogs(),
+    enabled: !!user?._id,
+  });
+
   const { data: userCampaigns = [] } = useQuery({
-    queryKey: ['/api/campaigns', 'user'],
+    queryKey: ["/api/campaigns/my"],
+    queryFn: () => campaignService.getMyCampaigns(),
+    enabled: !!user?._id,
+  });
+
+  const { data: joinedCampaigns = [] } = useQuery({
+    queryKey: ["/api/campaigns", "joined"],
     queryFn: async () => {
-      const allCampaigns = await campaignService.getCampaigns('');
-      return allCampaigns.filter(campaign => campaign.organizerId === user?.id);
+      const allCampaigns = await campaignService.getCampaigns("");
+      return allCampaigns.filter(
+        (campaign) =>
+          Array.isArray(campaign.participants) &&
+          campaign.participants
+            .map((id) => id.toString())
+            .includes(user?._id?.toString())
+      );
     },
-    enabled: !!user?.id,
+    enabled: !!user?._id,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -64,7 +98,7 @@ const Profile = () => {
         title: "Profile Updated",
         description: "Your profile has been successfully updated.",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/users/profile'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users/profile"] });
     },
     onError: (error) => {
       toast({
@@ -77,9 +111,9 @@ const Profile = () => {
 
   const handleEditChange = (e) => {
     const { name, value } = e.target;
-    setEditData(prev => ({
+    setEditData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -89,34 +123,46 @@ const Profile = () => {
 
   const handleCancel = () => {
     setEditData({
-      username: user?.username || '',
-      email: user?.email || '',
+      username: user?.username || "",
+      email: user?.email || "",
     });
     setIsEditing(false);
   };
 
-  const totalPoints = classifications.reduce((sum, item) => sum + item.pointsEarned, 0);
+  const totalPoints = classifications.reduce(
+    (sum, item) => sum + item.pointsEarned,
+    0
+  );
   const thisWeekClassifications = classifications.filter(
-    item => new Date(item.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    (item) =>
+      new Date(item.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
   ).length;
 
   const getLevelProgress = () => {
     const levels = {
-      'Beginner': { min: 0, max: 49 },
-      'Eco Explorer': { min: 50, max: 199 },
-      'Eco Warrior': { min: 200, max: 499 },
-      'Eco Champion': { min: 500, max: 999 },
-      'Eco Master': { min: 1000, max: Infinity }
+      Beginner: { min: 0, max: 49 },
+      "Eco Explorer": { min: 50, max: 199 },
+      "Eco Warrior": { min: 200, max: 499 },
+      "Eco Champion": { min: 500, max: 999 },
+      "Eco Master": { min: 1000, max: Infinity },
     };
-    
-    const currentLevel = levels[user?.level] || levels['Beginner'];
-    const progress = currentLevel.max === Infinity ? 100 : 
-      Math.min(((user?.ecoPoints || 0) - currentLevel.min) / (currentLevel.max - currentLevel.min) * 100, 100);
-    
+
+    const currentLevel = levels[user?.level] || levels["Beginner"];
+    const progress =
+      currentLevel.max === Infinity
+        ? 100
+        : Math.min(
+            (((user?.ecoPoints || 0) - currentLevel.min) /
+              (currentLevel.max - currentLevel.min)) *
+              100,
+            100
+          );
+
     return {
       current: user?.ecoPoints || 0,
-      required: currentLevel.max === Infinity ? 'Max Level' : currentLevel.max + 1,
-      percentage: Math.round(progress)
+      required:
+        currentLevel.max === Infinity ? "Max Level" : currentLevel.max + 1,
+      percentage: Math.round(progress),
     };
   };
 
@@ -124,14 +170,14 @@ const Profile = () => {
 
   const getBlogStatusColor = (status) => {
     switch (status) {
-      case 'approved':
-        return 'bg-green-100 text-green-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'rejected':
-        return 'bg-red-100 text-red-800';
+      case "approved":
+        return "bg-green-100 text-green-800";
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "rejected":
+        return "bg-red-100 text-red-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -164,11 +210,7 @@ const Profile = () => {
                   </Button>
                 ) : (
                   <div className="flex space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleCancel}
-                    >
+                    <Button variant="outline" size="sm" onClick={handleCancel}>
                       <X className="h-4 w-4 mr-1" />
                       Cancel
                     </Button>
@@ -193,12 +235,10 @@ const Profile = () => {
                 <Avatar className="h-24 w-24 mx-auto mb-4">
                   <AvatarImage src={user?.profileImage} alt={user?.username} />
                   <AvatarFallback className="text-2xl">
-                    {user?.username?.charAt(0).toUpperCase() || 'U'}
+                    {user?.username?.charAt(0).toUpperCase() || "U"}
                   </AvatarFallback>
                 </Avatar>
-                <Badge className="text-sm">
-                  {user?.level}
-                </Badge>
+                <Badge className="text-sm">{user?.level}</Badge>
               </div>
 
               <div className="space-y-4">
@@ -243,7 +283,12 @@ const Profile = () => {
                   <Label>Member Since</Label>
                   <div className="flex items-center space-x-2 mt-1">
                     <Calendar className="h-4 w-4 text-gray-400" />
-                    <span>{format(new Date(user?.createdAt || Date.now()), 'MMMM yyyy')}</span>
+                    <span>
+                      {format(
+                        new Date(user?.createdAt || Date.now()),
+                        "MMMM yyyy"
+                      )}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -278,10 +323,9 @@ const Profile = () => {
                   />
                 </div>
                 <div className="text-xs text-gray-600">
-                  {typeof levelProgress.required === 'number' ? 
-                    `${levelProgress.current} / ${levelProgress.required} points` :
-                    levelProgress.required
-                  }
+                  {typeof levelProgress.required === "number"
+                    ? `${levelProgress.current} / ${levelProgress.required} points`
+                    : levelProgress.required}
                 </div>
               </div>
             </CardContent>
@@ -337,12 +381,17 @@ const Profile = () => {
                     <div className="text-center py-8">
                       <Camera className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                       <p className="text-gray-600">No classifications yet</p>
-                      <p className="text-sm text-gray-500">Start classifying waste to see your history here!</p>
+                      <p className="text-sm text-gray-500">
+                        Start classifying waste to see your history here!
+                      </p>
                     </div>
                   ) : (
                     <div className="space-y-4">
                       {classifications.slice(0, 10).map((item) => (
-                        <div key={item.id} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                        <div
+                          key={item._id}
+                          className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg"
+                        >
                           <img
                             src={item.imageUrl}
                             alt="Classified waste"
@@ -353,7 +402,7 @@ const Profile = () => {
                               {item.category}
                             </Badge>
                             <p className="text-sm text-gray-600">
-                              {format(new Date(item.createdAt), 'MMM dd, yyyy')}
+                              {format(new Date(item.createdAt), "MMM dd, yyyy")}
                             </p>
                           </div>
                           <div className="text-right">
@@ -382,18 +431,30 @@ const Profile = () => {
                     <div className="text-center py-8">
                       <BookOpen className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                       <p className="text-gray-600">No articles yet</p>
-                      <p className="text-sm text-gray-500">Write your first article to share your knowledge!</p>
+                      <p className="text-sm text-gray-500">
+                        Write your first article to share your knowledge!
+                      </p>
                     </div>
                   ) : (
                     <div className="space-y-4">
                       {userBlogs.map((blog) => (
-                        <div key={blog.id} className="p-4 bg-gray-50 rounded-lg">
+                        <div
+                          key={blog._id}
+                          className="p-4 bg-gray-50 rounded-lg"
+                        >
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <h3 className="font-semibold text-gray-900 mb-1">{blog.title}</h3>
-                              <p className="text-sm text-gray-600 mb-2 line-clamp-2">{blog.excerpt}</p>
+                              <h3 className="font-semibold text-gray-900 mb-1">
+                                {blog.title}
+                              </h3>
+                              <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                                {blog.excerpt}
+                              </p>
                               <p className="text-xs text-gray-500">
-                                {format(new Date(blog.createdAt), 'MMM dd, yyyy')}
+                                {format(
+                                  new Date(blog.createdAt),
+                                  "MMM dd, yyyy"
+                                )}
                               </p>
                             </div>
                             <Badge className={getBlogStatusColor(blog.status)}>
@@ -418,23 +479,42 @@ const Profile = () => {
                     <div className="text-center py-8">
                       <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                       <p className="text-gray-600">No campaigns created yet</p>
-                      <p className="text-sm text-gray-500">Create your first campaign to bring your community together!</p>
+                      <p className="text-sm text-gray-500">
+                        Create your first campaign to bring your community
+                        together!
+                      </p>
                     </div>
                   ) : (
                     <div className="space-y-4">
                       {userCampaigns.map((campaign) => (
-                        <div key={campaign.id} className="p-4 bg-gray-50 rounded-lg">
+                        <div
+                          key={campaign._id}
+                          className="p-4 bg-gray-50 rounded-lg"
+                        >
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <h3 className="font-semibold text-gray-900 mb-1">{campaign.title}</h3>
-                              <p className="text-sm text-gray-600 mb-2 line-clamp-2">{campaign.description}</p>
+                              <h3 className="font-semibold text-gray-900 mb-1">
+                                {campaign.title}
+                              </h3>
+                              <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                                {campaign.description}
+                              </p>
                               <div className="flex items-center space-x-4 text-xs text-gray-500">
                                 <span>{campaign.location}</span>
-                                <span>{campaign.participantCount} participants</span>
-                                <span>{format(new Date(campaign.startDate), 'MMM dd, yyyy')}</span>
+                                <span>
+                                  {campaign.participantCount} participants
+                                </span>
+                                <span>
+                                  {format(
+                                    new Date(campaign.startDate),
+                                    "MMM dd, yyyy"
+                                  )}
+                                </span>
                               </div>
                             </div>
-                            <Badge className={getBlogStatusColor(campaign.status)}>
+                            <Badge
+                              className={getBlogStatusColor(campaign.status)}
+                            >
                               {campaign.status}
                             </Badge>
                           </div>
@@ -446,6 +526,59 @@ const Profile = () => {
               </Card>
             </TabsContent>
           </Tabs>
+          {/* Joined Campaigns Tab */}
+          <Card className="mt-8">
+            <CardHeader>
+              <CardTitle>Joined Campaigns</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {joinedCampaigns.length === 0 ? (
+                <div className="text-center py-8">
+                  <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-600">
+                    You have not joined any campaigns yet.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {joinedCampaigns.map((campaign) => (
+                    <div
+                      key={campaign._id}
+                      className="p-4 bg-gray-50 rounded-lg"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-900 mb-1">
+                            {campaign.title}
+                          </h3>
+                          <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                            {campaign.description}
+                          </p>
+                          <div className="flex items-center space-x-4 text-xs text-gray-500">
+                            <span>{campaign.location}</span>
+                            <span>
+                              {campaign.participants?.length ?? 0} participants
+                            </span>
+                            <span>
+                              {format(
+                                new Date(campaign.startDate),
+                                "MMM dd, yyyy"
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                        <Badge
+                          className={getBlogStatusColor?.(campaign.status)}
+                        >
+                          {campaign.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
