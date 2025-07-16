@@ -52,14 +52,9 @@ const Profile = () => {
   // Fetch user's data
   const { data: classifications = [] } = useQuery({
     queryKey: ["/api/waste-classifications"],
+    queryFn: () => wasteService.getClassifications(),
     staleTime: 5 * 60 * 1000,
   });
-
-  // const { data: classifications = [] } = useQuery({
-  //   queryKey: ["waste-classifications", user?._id],
-  //   queryFn: () => wasteService.getClassifications(user?._id),
-  //   enabled: !!user?._id,
-  // });
 
   const { data: userBlogs = [] } = useQuery({
     queryKey: ["/api/blogs/my"],

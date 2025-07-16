@@ -24,6 +24,9 @@ app.use(cors({
 }));
 app.use(passport.initialize());
 
+// Serve uploaded images statically
+app.use('/uploads', express.static('uploads'));
+
 // Connect to DB
 import connectDB from "./config/database.js";
 connectDB();

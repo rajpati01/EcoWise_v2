@@ -31,8 +31,19 @@ class WasteService {
   }
 
   async getClassifications() {
-    return apiService.get("/waste-classifications");
+  const token = localStorage.getItem('token');
+  const response = await fetch("http://localhost:3001/api/waste/classifications", {
+    credentials: "include",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data.message || "Failed to load classifications");
   }
+  return response.json();
+}
 
   async getDisposalCenters() {
     return apiService.get("/disposal-centers");
