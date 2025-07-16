@@ -28,16 +28,18 @@ export const classifyWaste = async (req, res) => {
     const ai = aiRes.data;
     // ai = { type, confidence, instructions, category, pointsEarned, filename }
 
+    const webPath = '/uploads/' + file.filename;
     const classification = await WasteClassification.create({
       user: user._id,
-      imageUrl: file.path,
+      imageUrl:  webPath,  //file.path,
       category: ai.category,
       confidence: ai.confidence,
       pointsEarned: ai.pointsEarned,
     });
 
     //  Update EcoPoints
-    let ecoPoints = await EcoPoints.findOne({ user: user._id });
+    const userId = req.user._id;
+    let ecoPoints = await EcoPoints.findOne({ user: userId });
 
     if (!ecoPoints) {
       ecoPoints = new EcoPoints({
