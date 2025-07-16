@@ -21,44 +21,6 @@ import {
   Recycle,
 } from "lucide-react";
 
-// Mock waste guide (simulate fetching from DB or API)
-const wasteGuides = {
-  plastic: {
-    instructions: [
-      "Rinse the plastic thoroughly to remove food residues.",
-      "Remove labels and lids if possible.",
-      "Place in the plastic recycling bin.",
-    ],
-    points: 10,
-  },
-  organic: {
-    instructions: [
-      "Place in a compost bin or use for home composting.",
-      "Do not mix with plastic or hazardous waste.",
-    ],
-    points: 5,
-  },
-  paper: {
-    instructions: [
-      "Ensure paper is clean and dry.",
-      "Flatten boxes to save space.",
-      "Avoid wax-coated paper in recycling.",
-    ],
-    points: 8,
-  },
-  hazardous: {
-    instructions: [
-      "Do not dispose in regular trash.",
-      "Contact local waste authority for proper disposal.",
-    ],
-    points: 10,
-  },
-  unknown: {
-    instructions: ["Unable to classify. Please try with a clearer image."],
-    points: 0,
-  },
-};
-
 const WasteClassifier = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -90,7 +52,7 @@ const WasteClassifier = () => {
     mutationFn: (file) => wasteService.classifyWaste(file),
     onSuccess: (data) => {
       setClassificationResult({
-        category: data.type,
+        category: data.category,
         confidence: data.confidence,
         instructions: data.instructions,
         pointsEarned: data.pointsEarned,

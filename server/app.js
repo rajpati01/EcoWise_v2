@@ -1,38 +1,50 @@
-    import express from 'express';
-    import cors from 'cors';
-    import passport from 'passport';
-    import './config/passport.js';
+import express from "express";
+import cors from "cors";
+import passport from "passport";
+import "./config/passport.js";
 
-    import authRoutes from './routes/auth.js';
-    import campaignRoutes from './routes/campaigns.js';
-    import adminRoutes from './routes/admin.js';
-    import blogRoutes from './routes/blogs.js';
-    import wasteGuideRoutes from './routes/wasteGuides.js';
-    import wasteRoutes from './routes/wasteRoutes.js';
-    import ecoPointsRoutes from './routes/ecopoints.js';
-    // import other routes similarly
+import authRoutes from "./routes/auth.js";
+import campaignRoutes from "./routes/campaigns.js";
+import adminRoutes from "./routes/admin.js";
+import blogRoutes from "./routes/blogs.js";
+import wasteGuideRoutes from "./routes/wasteGuides.js";
+import wasteRoutes from "./routes/wasteRoutes.js";
+import ecoPointsRoutes from "./routes/ecopoints.js";
+// import other routes similarly
 
-    const app = express();
+import dotenv from 'dotenv';
+dotenv.config();
 
-    // middleware 
-    app.use(cors());
-    app.use(express.json());
-    app.use(passport.initialize());
+const app = express();
 
-    // Connect to DB
-    import connectDB from './config/database.js';
-    connectDB();
+// middleware
+app.use(cors({
+  origin: 'http://localhost:5173', // frontend origin
+  credentials: true                // allow cookies/auth
+}));
+app.use(passport.initialize());
 
-    // Routes
-    app.use('/api/auth', authRoutes);
-    app.get('/api/test', (req, res) => {
-    res.send('EcoWise backend is running 🚀');
-    });
-    app.use('/api/campaigns', campaignRoutes);
-    app.use('/api/admin', adminRoutes);
-    app.use('/api/blogs', blogRoutes);
-    app.use('/api/waste-guides', wasteGuideRoutes);
-    app.use('/api/waste', wasteRoutes);
-    app.use("/api/ecopoints", ecoPointsRoutes);
+// Connect to DB
+import connectDB from "./config/database.js";
+connectDB();
 
-    export default app;
+// Routes
+app.use("/api/auth", express.json(), authRoutes);
+app.get("/api/test", (req, res) => {
+  res.send("EcoWise backend is running 🚀");
+});
+app.use("/api/campaigns", express.json(), campaignRoutes);
+app.use("/api/admin", express.json(), adminRoutes);
+app.use("/api/blogs", express.json(), blogRoutes);
+app.use("/api/waste-guides", express.json(), wasteGuideRoutes);
+app.use("/api/ecopoints", express.json(), ecoPointsRoutes);
+app.use("/api/waste", wasteRoutes);
+
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error("Express error:", err);
+  res.status(500).json({ message: "Server Error", error: err?.message || err });
+});
+
+export default app;

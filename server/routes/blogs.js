@@ -5,11 +5,15 @@ import {
   getBlogs,
   approveBlog,
   rejectBlog,
-  getBlogById 
+  getBlogById,
+  getUserBlogs 
 } from '../controllers/blogController.js';
 import  isAdmin  from '../middleware/admin.js';
 
 const router = express.Router();
+
+// Authenticated user can create a blog
+router.get('/my', protect, getUserBlogs);
 
 // Public
 router.get('/', getBlogs);

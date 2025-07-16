@@ -1,29 +1,43 @@
-import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { campaignService } from '../services/campaignService';
-import { useAuth } from '../hooks/useAuth';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Button } from '../components/ui/button';
-import { Badge } from '../components/ui/badge';
-import { useToast } from '../hooks/use-toast';
-import { Calendar, MapPin, Users, User } from 'lucide-react';
-import { format } from 'date-fns';
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { campaignService } from "../services/campaignService";
+import { useAuth } from "../hooks/useAuth";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Badge } from "../components/ui/badge";
+import { useToast } from "../hooks/use-toast";
+import { Calendar, MapPin, Users, User } from "lucide-react";
+import { format } from "date-fns";
 
 const CampaignCard = ({ campaign }) => {
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [hasJoined, setHasJoined] = useState(false);
+  const [justJoined, setJustJoined] = useState(false);
+
+  const hasJoined =
+    (Array.isArray(campaign.participants) &&
+      campaign.participants
+        .map((id) => id.toString())
+        .includes(user?._id?.toString())) ||
+    justJoined;
 
   const joinMutation = useMutation({
-    mutationFn: () => campaignService.joinCampaign(campaign.id),
+    mutationFn: () => campaignService.joinCampaign(campaign._id),
     onSuccess: () => {
-      setHasJoined(true);
+      setJustJoined(true);
       toast({
         title: "Joined Campaign!",
-        description: "You've successfully joined this campaign and earned 10 eco points!",
+        description:
+          "You've successfully joined this campaign and earned 10 eco points!",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/campaigns'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/campaigns"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
     },
     onError: (error) => {
       toast({
@@ -36,11 +50,11 @@ const CampaignCard = ({ campaign }) => {
 
   const getStatusBadge = (status) => {
     switch (status) {
-      case 'approved':
+      case "approved":
         return <Badge className="bg-green-100 text-green-800">Active</Badge>;
-      case 'pending':
+      case "pending":
         return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
-      case 'rejected':
+      case "rejected":
         return <Badge variant="destructive">Rejected</Badge>;
       default:
         return null;
@@ -48,7 +62,9 @@ const CampaignCard = ({ campaign }) => {
   };
 
   const isUpcoming = new Date(campaign.startDate) > new Date();
-  const isActive = new Date() >= new Date(campaign.startDate) && new Date() <= new Date(campaign.endDate);
+  const isActive =
+    new Date() >= new Date(campaign.startDate) &&
+    new Date() <= new Date(campaign.endDate);
   const isEnded = new Date() > new Date(campaign.endDate);
 
   return (
@@ -82,14 +98,15 @@ const CampaignCard = ({ campaign }) => {
             <MapPin className="h-4 w-4 text-gray-400" />
             <span>{campaign.location}</span>
           </div>
-          
+
           <div className="flex items-center space-x-2 text-sm text-gray-600">
             <Calendar className="h-4 w-4 text-gray-400" />
             <span>
-              {format(new Date(campaign.startDate), 'MMM dd')} - {format(new Date(campaign.endDate), 'MMM dd, yyyy')}
+              {format(new Date(campaign.startDate), "MMM dd")} -{" "}
+              {format(new Date(campaign.endDate), "MMM dd, yyyy")}
             </span>
           </div>
-          
+
           <div className="flex items-center space-x-2 text-sm text-gray-600">
             <Users className="h-4 w-4 text-gray-400" />
             <span>{campaign.participantCount} participants</span>
@@ -104,19 +121,13 @@ const CampaignCard = ({ campaign }) => {
             </Badge>
           )}
           {isActive && (
-            <Badge className="bg-green-100 text-green-800">
-              Active Now
-            </Badge>
+            <Badge className="bg-green-100 text-green-800">Active Now</Badge>
           )}
-          {isEnded && (
-            <Badge variant="secondary">
-              Completed
-            </Badge>
-          )}
+          {isEnded && <Badge variant="secondary">Completed</Badge>}
         </div>
 
         {/* Action Button */}
-        {campaign.status === 'approved' && isAuthenticated && !isEnded && (
+        {campaign.status === "approved" && isAuthenticated && !isEnded && (
           <Button
             onClick={() => joinMutation.mutate()}
             disabled={joinMutation.isPending || hasJoined}
@@ -130,7 +141,7 @@ const CampaignCard = ({ campaign }) => {
             ) : (
               <>
                 <Users className="mr-2 h-4 w-4" />
-                {joinMutation.isPending ? 'Joining...' : 'Join Campaign'}
+                {joinMutation.isPending ? "Joining..." : "Join Campaign"}
               </>
             )}
           </Button>
