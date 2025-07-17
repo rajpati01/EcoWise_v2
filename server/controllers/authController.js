@@ -37,7 +37,7 @@ export const registerUser = async (req, res) => {
 
     // add eco point record for the new user
     const newEcoPoint = new EcoPoint({
-      user: newUser._id,
+      user: user._id,
       totalPoints: 0,
       history: [],
     });
