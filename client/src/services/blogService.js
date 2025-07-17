@@ -3,19 +3,17 @@ import { apiService } from "./api";
 class BlogService {
   async getBlogs(status = "") {
     try {
-      // Use the dedicated admin endpoint
-      const endpoint = `/blogs/admin${status ? `?status=${status}` : ""}`;
+      // Use the public endpoint for general blog listing
+      const endpoint =
+        status === "pending" || status === "rejected"
+          ? `/blogs/admin/all?status=${status}` // Admin-only endpoint for pending/rejected
+          : `/blogs`; // Public endpoint for approved blogs
+
       const response = await apiService.get(endpoint);
 
-      if (response?.data?.data && Array.isArray(response.data.data)) {
-        return response.data.data;
-      } else if (response?.data && Array.isArray(response.data)) {
-        return response.data;
-      } else if (Array.isArray(response)) {
-        return response;
-      }
-
-      return [];
+      if (response?.data?.data) return response.data.data;
+      if (response?.data) return response.data;
+      return response;
     } catch (error) {
       console.error("Error fetching blogs:", error);
       return [];
@@ -38,7 +36,7 @@ class BlogService {
       throw error;
     }
   }
-  
+
   // Get blogs created by the authenticated user
   // This is used in the Profile page to show user's blogs
   async getMyBlogs() {
