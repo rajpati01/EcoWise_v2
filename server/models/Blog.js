@@ -1,5 +1,22 @@
 import mongoose from "mongoose";
 
+const commentSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true
+  },
+  content: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
 const blogSchema = new mongoose.Schema(
   {
     title: {
@@ -35,6 +52,13 @@ const blogSchema = new mongoose.Schema(
       enum: ["pending", "approved", "rejected"],
       default: "pending",
     },
+    comments: [commentSchema],
+    likes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User"
+      }
+    ],
     createdAt: {
       type: Date,
       default: Date.now,
@@ -43,6 +67,9 @@ const blogSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const Blog = mongoose.model("Blog", blogSchema);
+// Create a text index for search functionality
+blogSchema.index({ title: 'text', content: 'text' });
+
+const Blog = mongoose.models.Blog || mongoose.model("Blog", blogSchema);
 
 export default Blog;

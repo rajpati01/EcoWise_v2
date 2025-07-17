@@ -69,11 +69,13 @@ const Profile = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: userBlogs = [] } = useQuery({
+  const { data: blogResponse, isLoading: blogsLoading } = useQuery({
     queryKey: ["/api/blogs/my"],
     queryFn: () => blogService.getMyBlogs(),
     enabled: !!user?._id,
   });
+
+  const userBlogs = blogResponse?.data || [];
 
   const { data: userCampaigns = [] } = useQuery({
     queryKey: ["/api/campaigns/my"],

@@ -6,25 +6,30 @@ import {
   approveBlog,
   rejectBlog,
   getBlogById,
-  getUserBlogs 
+  getUserBlogs,
+  addComment,
+  likeBlog,
+  getAllBlogsForAdmin
 } from '../controllers/blogController.js';
-import  isAdmin  from '../middleware/admin.js';
+import isAdmin from '../middleware/admin.js';
 
 const router = express.Router();
 
-// Authenticated user can create a blog
+router.get('/admin', protect, isAdmin, getAllBlogsForAdmin);
+
+// User blogs
 router.get('/my', protect, getUserBlogs);
 
-// Public
+// Public routes
 router.get('/', getBlogs);
-
-// Get blog by ID
 router.get('/:id', getBlogById);
 
-// Authenticated
+// Authenticated routes
 router.post('/', protect, createBlog);
+router.post('/:id/comments', protect, addComment);
+router.post('/:id/like', protect, likeBlog);
 
-// Admin routes to approve or reject blogs
+// Admin routes
 router.post('/:id/approve', protect, isAdmin, approveBlog);
 router.post('/:id/reject', protect, isAdmin, rejectBlog);
 

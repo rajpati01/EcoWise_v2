@@ -38,7 +38,7 @@ import {
 } from "lucide-react";
 
 const Blog = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
@@ -50,9 +50,20 @@ const Blog = () => {
     tags: "",
   });
 
+  const displayUser = (user) => {
+    if (!user) return "Unknown";
+    if (typeof user === "string") return user;
+    if (typeof user === "object") {
+      return (
+        user.name || user.username || (user._id ? String(user._id) : "Unknown")
+      );
+    }
+    return String(user);
+  };
+
   const { data: blogs = [], isLoading } = useQuery({
     queryKey: ["/api/blogs"],
-    queryFn: () => blogService.getBlogs("approved"), 
+    queryFn: () => blogService.getBlogs("approved"),
     staleTime: 2 * 60 * 1000,
   });
 
@@ -60,11 +71,13 @@ const Blog = () => {
     mutationFn: (blogData) =>
       blogService.createBlog({
         ...blogData,
+        authorName: user?.name || user?.username || user?.email?.split('@')[0] || "Anonymous User",
         tags: blogData.tags
           .split(",")
           .map((tag) => tag.trim())
           .filter(Boolean),
       }),
+      
     onSuccess: () => {
       setDialogOpen(false);
       setNewBlog({
@@ -249,7 +262,13 @@ const Blog = () => {
           <CardContent className="p-6 text-center">
             <PenTool className="h-8 w-8 text-secondary mx-auto mb-2" />
             <div className="text-2xl font-bold text-secondary">
-              {new Set(approvedBlogs.map((b) => b.authorId)).size}
+              {
+                new Set(
+                  approvedBlogs.map((b) =>
+                    typeof b.authorId === "object" ? b.authorId._id : b.authorId
+                  )
+                ).size
+              }
             </div>
             <div className="text-sm text-gray-600">Contributors</div>
           </CardContent>

@@ -1,22 +1,54 @@
-import { Link } from 'wouter';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Badge } from '../components/ui/badge';
-import { Button } from '../components/ui/button';
-import { Calendar, User, ArrowRight } from 'lucide-react';
-import { format } from 'date-fns';
+import { Link } from "wouter";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
+import { Badge } from "../components/ui/badge";
+import { Button } from "../components/ui/button";
+import { Calendar, User, ArrowRight } from "lucide-react";
+import { format, parseISO } from "date-fns";
 
 const BlogCard = ({ blog, showStatus = false }) => {
+  // Helper function for safely formatting dates
+  const formatDate = (dateString) => {
+    if (!dateString) return "Unknown date";
+    try {
+      return format(parseISO(dateString), "MMM dd, yyyy");
+    } catch (error) {
+      console.error("Error formatting date:", dateString, error);
+      return "Invalid date";
+    }
+  };
+
   const getStatusBadge = (status) => {
     switch (status) {
-      case 'approved':
+      case "approved":
         return <Badge className="bg-green-100 text-green-800">Published</Badge>;
-      case 'pending':
+      case "pending":
         return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
-      case 'rejected':
+      case "rejected":
         return <Badge variant="destructive">Rejected</Badge>;
       default:
         return null;
     }
+  };
+
+  // Safe author display function
+  const displayAuthor = () => {
+    if (blog.authorName && blog.authorName !== "Unknown") {
+      return blog.authorName;
+    }
+    
+    if (blog.authorId) {
+      if (typeof blog.authorId === "object") {
+        return blog.authorId.name || blog.authorId.username || "Community Member";
+      }
+      return "Community Member";
+    }
+    
+    return "Anonymous";
   };
 
   return (
@@ -31,9 +63,9 @@ const BlogCard = ({ blog, showStatus = false }) => {
       </CardHeader>
       <CardContent className="flex-1 flex flex-col space-y-4">
         {/* Blog Image */}
-        {blog.imageUrl && (
+        {blog.coverImage && (
           <img
-            src={blog.imageUrl}
+            src={blog.coverImage}
             alt={blog.title}
             className="w-full h-48 object-cover rounded-lg"
           />
@@ -65,11 +97,13 @@ const BlogCard = ({ blog, showStatus = false }) => {
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-1">
               <User className="h-3 w-3" />
-              <span>Author {blog.authorName}</span>
+              <p className="text-sm text-gray-600">
+                By {displayAuthor()}
+              </p>
             </div>
             <div className="flex items-center space-x-1">
               <Calendar className="h-3 w-3" />
-              <span>{format(new Date(blog.createdAt), 'MMM dd, yyyy')}</span>
+              <span>{formatDate(blog.createdAt)}</span>
             </div>
           </div>
         </div>
