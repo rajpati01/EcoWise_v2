@@ -1,5 +1,6 @@
 import WasteClassification from "../models/WasteClassification.js";
-import EcoPoints from "../models/ecopoints.js";
+import EcoPoints from "../models/EcoPoints.js"
+import updateEcoPoints from "../utils/ecoPointsHelper.js";
 import axios from "axios";
 import FormData from "form-data";
 import fs from "fs";
@@ -36,6 +37,14 @@ export const classifyWaste = async (req, res) => {
       confidence: ai.confidence,
       pointsEarned: ai.pointsEarned,
     });
+
+    // Add EcoPoints (1 point for classification)
+    await updateEcoPoints(
+      req.user._id,
+      'classification',
+      1,
+      `Classified ${classification.wasteType}`
+    );
 
     //  Update EcoPoints
     const userId = req.user._id;
@@ -74,11 +83,16 @@ export const classifyWaste = async (req, res) => {
 // Get all classifications for the logged-in user
 export const getUserClassifications = async (req, res) => {
   try {
-    const items = await WasteClassification.find({ user: req.user._id }).sort({
-      createdAt: -1,
-    });
-    res.json(items);
-  } catch (error) {
-    res.status(500).json({ message: "Failed to get classifications", error });
+    
+    // Find all classifications for the current user
+    const classifications = await WasteClassification.find({ 
+      user: req.user._id 
+    })
+    .sort({ createdAt: -1 });
+
+    return res.json(classifications);
+  } catch (err) {
+    console.error('Error fetching user classifications:', err);
+    return res.status(500).json({ message: 'Failed to fetch classifications' });
   }
 };

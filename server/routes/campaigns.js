@@ -4,7 +4,8 @@ import {
   getAllCampaigns,
   joinCampaign,
   updateCampaignStatus,
-  getUserCampaigns
+  getUserCampaigns,
+  getJoinedCampaigns,
 } from "../controllers/campaignController.js";
 import { protect } from "../middleware/auth.js";
 import  isAdmin  from "../middleware/admin.js";
@@ -16,5 +17,6 @@ router.get("/", getAllCampaigns);
 router.post("/:id/join", protect, joinCampaign);
 router.patch("/:id/status", protect, isAdmin, updateCampaignStatus);
 router.get("/my", protect, getUserCampaigns);
+router.get("/joined", protect, getJoinedCampaigns);
 
 export default router;

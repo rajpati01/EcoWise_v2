@@ -20,12 +20,13 @@ const CampaignCard = ({ campaign }) => {
   const queryClient = useQueryClient();
   const [justJoined, setJustJoined] = useState(false);
 
-  const hasJoined =
-    (Array.isArray(campaign.participants) &&
-      campaign.participants
-        .map((id) => id.toString())
-        .includes(user?._id?.toString())) ||
-    justJoined;
+   const hasJoined = justJoined || (user && campaign.participants && (
+    // Check if participants is an array of objects with user property
+    (campaign.participants.length > 0 && campaign.participants[0].user) 
+      ? campaign.participants.some(p => p.user && p.user.toString() === user._id.toString())
+      // Fallback to simple array check
+      : campaign.participants.some(id => id && id.toString() === user._id.toString())
+  ));
 
   const joinMutation = useMutation({
     mutationFn: () => campaignService.joinCampaign(campaign._id),

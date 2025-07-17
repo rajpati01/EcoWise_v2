@@ -9,4 +9,10 @@ const wasteClassificationSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-export default mongoose.model('WasteClassification', wasteClassificationSchema);
+// export default mongoose.model('WasteClassification', wasteClassificationSchema);
+
+// Connect to the existing collection
+const wasteClassification = mongoose.models.WasteCollection || 
+  mongoose.model('WasteClassification', wasteClassificationSchema, 'WasteClassification');
+
+export default wasteClassification;

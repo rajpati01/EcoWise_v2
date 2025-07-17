@@ -1,21 +1,56 @@
-import { useQuery } from '@tanstack/react-query';
-import { apiService } from '../services/api';
-import { useAuth } from '../hooks/useAuth';
-import LeaderboardCard from '../components/LeadreboardCard';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Badge } from '../components/ui/badge'; 
-import { Trophy, Award, Users, TrendingUp, Crown, Star, Loader2 } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { leaderboardService } from "../services/leaderboardService";
+import { useAuth } from "../hooks/useAuth";
+import LeaderboardCard from "../components/LeadreboardCard";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
+import { Badge } from "../components/ui/badge";
+import {
+  Trophy,
+  Award,
+  Users,
+  TrendingUp,
+  Crown,
+  Star,
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import { Button } from "../components/ui/button";
 
 const Leaderboard = () => {
   const { user } = useAuth();
+  const [page, setPage] = useState(1);
+  const LIMIT = 10;
 
-  const { data: leaderboard = [], isLoading } = useQuery({
-    queryKey: ['/api/users/leaderboard'],
+  // Fetch leaderboard data with pagination
+  const {
+    data: leaderboard = [],
+    isLoading,
+    isFetching,
+  } = useQuery({
+    queryKey: ["/api/leaderboard", page],
+    queryFn: () => leaderboardService.getLeaderboard(page, LIMIT),
     staleTime: 2 * 60 * 1000, // 2 minutes
+    keepPreviousData: true,
   });
 
-  const userRank = leaderboard.findIndex(u => u.id === user?.id) + 1;
-  const totalUsers = leaderboard.length;
+  // Fetch user rank separately
+  const { data: userRankData } = useQuery({
+    queryKey: ["/api/leaderboard/user", user?._id],
+    queryFn: () => leaderboardService.getUserRank(user?._id),
+    staleTime: 2 * 60 * 1000,
+    enabled: !!user?._id,
+  });
+
+  const userRank = userRankData?.rank || "N/A";
+  const totalUsers =
+    leaderboard.length > 0 ? Math.max(...leaderboard.map((u) => u.rank)) : 0;
 
   const getLevelStats = () => {
     const levels = leaderboard.reduce((acc, user) => {
@@ -26,6 +61,9 @@ const Leaderboard = () => {
   };
 
   const levelStats = getLevelStats();
+
+  const hasNextPage = leaderboard.length === LIMIT;
+  const hasPrevPage = page > 1;
 
   if (isLoading) {
     return (
@@ -47,12 +85,12 @@ const Leaderboard = () => {
           <h1 className="text-4xl font-bold text-gray-900">Leaderboard</h1>
         </div>
         <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-          See how you rank among our eco-warriors. Every sustainable action counts towards building a greener future!
+          See how you rank among our eco-warriors. Every sustainable action
+          counts towards building a greener future!
         </p>
       </div>
-
       {/* User Stats */}
-      {user && userRank > 0 && (
+      {user && userRank !== "N/A" && (
         <Card className="bg-gradient-to-r from-primary/10 to-secondary/10 border-primary/20">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -61,22 +99,30 @@ const Leaderboard = () => {
                   <Crown className="h-8 w-8 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900">Your Ranking</h3>
+                  <h3 className="text-xl font-bold text-gray-900">
+                    Your Ranking
+                  </h3>
                   <p className="text-gray-600">Keep up the great work!</p>
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-3xl font-bold text-primary">#{userRank}</div>
-                <div className="text-sm text-gray-600">out of {totalUsers} users</div>
+                <div className="text-3xl font-bold text-primary">
+                  #{userRank}
+                </div>
+                <div className="text-sm text-gray-600">
+                  out of {totalUsers} users
+                </div>
                 <Badge className="mt-2">
-                  {user.level}
+                  {user.level ||
+                    leaderboardService.getLevelFromPoints(
+                      userRankData?.totalPoints || 0
+                    )}
                 </Badge>
               </div>
             </div>
           </CardContent>
         </Card>
       )}
-
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
@@ -88,7 +134,7 @@ const Leaderboard = () => {
             <div className="text-sm text-gray-600">Top Score</div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-6 text-center">
             <Users className="h-8 w-8 text-primary mx-auto mb-2" />
@@ -96,28 +142,30 @@ const Leaderboard = () => {
             <div className="text-sm text-gray-600">Total Users</div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-6 text-center">
             <Award className="h-8 w-8 text-secondary mx-auto mb-2" />
             <div className="text-2xl font-bold text-secondary">
-              {Math.round(leaderboard.reduce((sum, u) => sum + u.ecoPoints, 0) / totalUsers) || 0}
+              {Math.round(
+                leaderboard.reduce((sum, u) => sum + u.ecoPoints, 0) /
+                  leaderboard.length
+              ) || 0}
             </div>
             <div className="text-sm text-gray-600">Average Score</div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-6 text-center">
             <TrendingUp className="h-8 w-8 text-accent mx-auto mb-2" />
             <div className="text-2xl font-bold text-accent">
-              {levelStats['Eco Master'] || 0}
+              {levelStats["Eco Master"] || 0}
             </div>
             <div className="text-sm text-gray-600">Eco Masters</div>
           </CardContent>
         </Card>
       </div>
-
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Main Leaderboard */}
         <div className="lg:col-span-2 space-y-6">
@@ -135,8 +183,12 @@ const Leaderboard = () => {
                   <div className="w-16 h-16 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Trophy className="h-8 w-8 text-white" />
                   </div>
-                  <h3 className="font-bold text-gray-900 truncate">{leaderboard[1].username}</h3>
-                  <Badge variant="secondary" className="mb-2">{leaderboard[1].level}</Badge>
+                  <h3 className="font-bold text-gray-900 truncate">
+                    {leaderboard[1].username}
+                  </h3>
+                  <Badge variant="secondary" className="mb-2">
+                    {leaderboard[1].level}
+                  </Badge>
                   <div className="text-xl font-bold text-gray-700">
                     {leaderboard[1].ecoPoints.toLocaleString()}
                   </div>
@@ -150,8 +202,12 @@ const Leaderboard = () => {
                   <div className="w-20 h-20 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Crown className="h-10 w-10 text-white" />
                   </div>
-                  <h3 className="font-bold text-gray-900 truncate">{leaderboard[0].username}</h3>
-                  <Badge className="bg-amber-600 mb-2">{leaderboard[0].level}</Badge>
+                  <h3 className="font-bold text-gray-900 truncate">
+                    {leaderboard[0].username}
+                  </h3>
+                  <Badge className="bg-amber-600 mb-2">
+                    {leaderboard[0].level}
+                  </Badge>
                   <div className="text-2xl font-bold text-amber-700">
                     {leaderboard[0].ecoPoints.toLocaleString()}
                   </div>
@@ -165,8 +221,12 @@ const Leaderboard = () => {
                   <div className="w-16 h-16 bg-gradient-to-br from-amber-600 to-amber-800 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Award className="h-8 w-8 text-white" />
                   </div>
-                  <h3 className="font-bold text-gray-900 truncate">{leaderboard[2].username}</h3>
-                  <Badge variant="secondary" className="mb-2">{leaderboard[2].level}</Badge>
+                  <h3 className="font-bold text-gray-900 truncate">
+                    {leaderboard[2].username}
+                  </h3>
+                  <Badge variant="secondary" className="mb-2">
+                    {leaderboard[2].level}
+                  </Badge>
                   <div className="text-xl font-bold text-amber-700">
                     {leaderboard[2].ecoPoints.toLocaleString()}
                   </div>
@@ -178,22 +238,51 @@ const Leaderboard = () => {
 
           {/* Full Rankings */}
           <div className="space-y-3">
-            {leaderboard.map((user, index) => (
+            {leaderboard.map((user) => (
               <LeaderboardCard
-                key={user.id}
+                key={user._id}
                 user={user}
-                rank={index + 1}
+                rank={user.rank}
                 showRank={true}
               />
             ))}
           </div>
 
+          {/* Pagination */}
+          {leaderboard.length > 0 && (
+            <div className="flex items-center justify-between mt-6">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={!hasPrevPage || isFetching}
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Previous
+              </Button>
+              <span className="text-sm text-gray-500">Page {page}</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => p + 1)}
+                disabled={!hasNextPage || isFetching}
+              >
+                Next
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+          )}
+
           {leaderboard.length === 0 && (
             <Card>
               <CardContent className="text-center py-12">
                 <Trophy className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Rankings Yet</h3>
-                <p className="text-gray-600">Be the first to start earning eco points!</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  No Rankings Yet
+                </h3>
+                <p className="text-gray-600">
+                  Be the first to start earning eco points!
+                </p>
               </CardContent>
             </Card>
           )}
@@ -209,13 +298,15 @@ const Leaderboard = () => {
             <CardContent className="space-y-4">
               {Object.entries(levelStats).map(([level, count]) => (
                 <div key={level} className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700">{level}</span>
+                  <span className="text-sm font-medium text-gray-700">
+                    {level}
+                  </span>
                   <div className="flex items-center space-x-2">
                     <div className="w-16 bg-gray-200 rounded-full h-2">
                       <div
                         className="bg-primary h-2 rounded-full"
                         style={{
-                          width: `${(count / totalUsers) * 100}%`
+                          width: `${(count / leaderboard.length) * 100}%`,
                         }}
                       />
                     </div>
@@ -233,17 +324,42 @@ const Leaderboard = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               {[
-                { level: 'Beginner', points: '0-49', color: 'bg-gray-500' },
-                { level: 'Eco Explorer', points: '50-199', color: 'bg-yellow-500' },
-                { level: 'Eco Warrior', points: '200-499', color: 'bg-green-500' },
-                { level: 'Eco Champion', points: '500-999', color: 'bg-blue-500' },
-                { level: 'Eco Master', points: '1000+', color: 'bg-purple-500' },
+                { level: "Beginner", points: "0-49", color: "bg-gray-500" },
+                {
+                  level: "Eco Explorer",
+                  points: "50-199",
+                  color: "bg-yellow-500",
+                },
+                {
+                  level: "Eco Warrior",
+                  points: "200-499",
+                  color: "bg-green-500",
+                },
+                {
+                  level: "Eco Champion",
+                  points: "500-999",
+                  color: "bg-blue-500",
+                },
+                {
+                  level: "Eco Master",
+                  points: "1000+",
+                  color: "bg-purple-500",
+                },
               ].map((achievement) => (
-                <div key={achievement.level} className="flex items-center space-x-3">
-                  <div className={`w-4 h-4 rounded-full ${achievement.color}`} />
+                <div
+                  key={achievement.level}
+                  className="flex items-center space-x-3"
+                >
+                  <div
+                    className={`w-4 h-4 rounded-full ${achievement.color}`}
+                  />
                   <div className="flex-1">
-                    <div className="font-medium text-sm">{achievement.level}</div>
-                    <div className="text-xs text-gray-600">{achievement.points} points</div>
+                    <div className="font-medium text-sm">
+                      {achievement.level}
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      {achievement.points} points
+                    </div>
                   </div>
                 </div>
               ))}

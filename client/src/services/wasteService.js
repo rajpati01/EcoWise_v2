@@ -5,7 +5,7 @@ class WasteService {
     const formData = new FormData();
     formData.append("image", imageFile);
 
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
 
     // POST to backend, which will forward to FastAPI
     const response = await fetch("http://localhost:3001/api/waste/classify", {
@@ -45,6 +45,24 @@ class WasteService {
   return response.json();
 }
 
+  async getUserClassifications() {
+    try {
+      // Make sure to return the response data
+      const response = await apiService.get("/waste/classifications/user");
+
+      // Check if the data is in response.data or directly in response
+      if (response && response.data) {
+        return response.data;
+      } else if (Array.isArray(response)) {
+        return response;
+      }
+      
+      return [];
+    } catch (error) {
+      console.error("Error fetching user classifications:", error);
+      return [];
+    }
+  }
   async getDisposalCenters() {
     return apiService.get("/disposal-centers");
   }
