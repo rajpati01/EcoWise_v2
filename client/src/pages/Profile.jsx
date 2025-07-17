@@ -36,6 +36,7 @@ import {
   Save,
   X,
   Loader2,
+  RefreshCw,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -49,17 +50,24 @@ const Profile = () => {
     email: user?.email || "",
   });
 
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
   // Fetch user's data
-  const { data: classifications = [] } = useQuery({
-    queryKey: ["/api/waste-classifications"],
+  // const { data: classifications = [] } = useQuery({
+  //   queryKey: ["/api/waste-classifications"],
+  //   staleTime: 5 * 60 * 1000,
+  // });
+
+  const {
+    data: classifications = [],
+    isLoading: isLoadingClassifications,
+    error: classificationsError,
+  } = useQuery({
+    queryKey: ["/api/waste-classifications", user?._id],
+    queryFn: () => wasteService.getUserClassifications(),
+    enabled: !!user?._id,
     staleTime: 5 * 60 * 1000,
   });
-
-  // const { data: classifications = [] } = useQuery({
-  //   queryKey: ["waste-classifications", user?._id],
-  //   queryFn: () => wasteService.getClassifications(user?._id),
-  //   enabled: !!user?._id,
-  // });
 
   const { data: userBlogs = [] } = useQuery({
     queryKey: ["/api/blogs/my"],
@@ -73,17 +81,58 @@ const Profile = () => {
     enabled: !!user?._id,
   });
 
-  const { data: joinedCampaigns = [] } = useQuery({
-    queryKey: ["/api/campaigns", "joined"],
+  const {
+    data: joinedCampaigns = [],
+    isLoading: isLoadingJoinedCampaigns,
+    error: joinedCampaignsError,
+  } = useQuery({
+    queryKey: ["/api/campaigns/joined"],
     queryFn: async () => {
-      const allCampaigns = await campaignService.getCampaigns("");
-      return allCampaigns.filter(
-        (campaign) =>
-          Array.isArray(campaign.participants) &&
-          campaign.participants
-            .map((id) => id.toString())
-            .includes(user?._id?.toString())
-      );
+      try {
+        // Try to get data from the endpoint
+        const data = await campaignService.getJoinedCampaigns();
+        if (data && data.length > 0) {
+          return data;
+        }
+
+        console.log(
+          "Falling back to client-side filtering for joined campaigns"
+        );
+
+        // Fallback: Filter all campaigns client-side
+        const allCampaigns = await campaignService.getCampaigns();
+        if (!user?._id) {
+          console.log("No user ID available for filtering");
+          return [];
+        }
+
+        const userId = user._id.toString();
+        console.log(`Filtering campaigns for user ID: ${userId}`);
+
+        return allCampaigns.filter((campaign) => {
+          if (!campaign.participants || !Array.isArray(campaign.participants)) {
+            return false;
+          }
+
+          if (campaign.participants.length === 0) {
+            return false;
+          }
+
+          // Check if participants have user property or are simple IDs
+          if (campaign.participants[0].user) {
+            return campaign.participants.some(
+              (p) => p.user && p.user.toString() === userId
+            );
+          } else {
+            return campaign.participants.some(
+              (id) => id && id.toString() === userId
+            );
+          }
+        });
+      } catch (error) {
+        console.error("Error in joined campaigns query:", error);
+        return [];
+      }
     },
     enabled: !!user?._id,
     staleTime: 5 * 60 * 1000,
@@ -374,10 +423,31 @@ const Profile = () => {
             <TabsContent value="classifications" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Waste Classifications</CardTitle>
+                  <div className="flex justify-between items-center">
+                    <CardTitle>Waste Classifications</CardTitle>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        queryClient.invalidateQueries([
+                          "/api/waste/classifications/user",
+                        ])
+                      }
+                    >
+                      <RefreshCw className="h-4 w-4 mr-1" />
+                      Refresh
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  {classifications.length === 0 ? (
+                  {isLoadingClassifications ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin h-8 w-8 border-t-2 border-primary rounded-full mx-auto"></div>
+                      <p className="text-gray-600 mt-2">
+                        Loading your classifications...
+                      </p>
+                    </div>
+                  ) : classifications.length === 0 ? (
                     <div className="text-center py-8">
                       <Camera className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                       <p className="text-gray-600">No classifications yet</p>
@@ -415,6 +485,32 @@ const Profile = () => {
                           </div>
                         </div>
                       ))}
+                    </div>
+                  )}
+                  {classifications.length > PAGE_SIZE && (
+                    <div className="flex justify-center mt-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={page === 1}
+                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      >
+                        Previous
+                      </Button>
+                      <span className="mx-4 self-center">
+                        Page {page} of{" "}
+                        {Math.ceil(classifications.length / PAGE_SIZE)}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={
+                          page >= Math.ceil(classifications.length / PAGE_SIZE)
+                        }
+                        onClick={() => setPage((p) => p + 1)}
+                      >
+                        Next
+                      </Button>
                     </div>
                   )}
                 </CardContent>
@@ -468,6 +564,38 @@ const Profile = () => {
                 </CardContent>
               </Card>
             </TabsContent>
+
+            {/* Debug information - Remove after fixing
+            <div className="mt-4 p-4 bg-gray-100 rounded-lg text-xs">
+              <h4 className="font-semibold">Debug Info:</h4>
+              <div className="mt-2">
+                <p>Classifications Count: {classifications.length}</p>
+                <p>
+                  Classifications Loading:{" "}
+                  {isLoadingClassifications ? "Yes" : "No"}
+                </p>
+                <p>
+                  Classifications Error:{" "}
+                  {classificationsError ? classificationsError.message : "None"}
+                </p>
+                <p>User ID: {user?._id}</p>
+                <p>
+                  Classifications Query Key:{" "}
+                  {JSON.stringify(["/api/waste/classifications/user"])}
+                </p>
+                <button
+                  className="px-2 py-1 bg-blue-100 text-blue-800 rounded mt-2 text-xs"
+                  onClick={() => {
+                    console.log("Manual classification fetch");
+                    wasteService.getUserClassifications().then((data) => {
+                      console.log("Manual fetch result:", data);
+                    });
+                  }}
+                >
+                  Test API Call
+                </button>
+              </div>
+            </div> */}
 
             <TabsContent value="campaigns" className="space-y-4">
               <Card>
@@ -532,7 +660,19 @@ const Profile = () => {
               <CardTitle>Joined Campaigns</CardTitle>
             </CardHeader>
             <CardContent>
-              {joinedCampaigns.length === 0 ? (
+              {isLoadingJoinedCampaigns ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin h-8 w-8 border-t-2 border-primary rounded-full mx-auto"></div>
+                  <p className="text-gray-600 mt-2">
+                    Loading your campaigns...
+                  </p>
+                </div>
+              ) : joinedCampaignsError ? (
+                <div className="text-center py-8 text-red-500">
+                  <p>Error loading joined campaigns</p>
+                  <p className="text-sm">{joinedCampaignsError.message}</p>
+                </div>
+              ) : joinedCampaigns.length === 0 ? (
                 <div className="text-center py-8">
                   <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                   <p className="text-gray-600">
@@ -567,9 +707,7 @@ const Profile = () => {
                             </span>
                           </div>
                         </div>
-                        <Badge
-                          className={getBlogStatusColor?.(campaign.status)}
-                        >
+                        <Badge className={getBlogStatusColor(campaign.status)}>
                           {campaign.status}
                         </Badge>
                       </div>

@@ -1,4 +1,5 @@
 import User from "../models/User.js";
+import EcoPoint from "../models/EcoPoints.js"
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
@@ -24,6 +25,7 @@ export const registerUser = async (req, res) => {
       return res.status(409).json({ message: "Username already taken" });
     }
 
+    // create new user
     const user = await User.create({
       name,
       username,
@@ -32,6 +34,14 @@ export const registerUser = async (req, res) => {
     });
 
     await user.save();
+
+    // add eco point record for the new user
+    const newEcoPoint = new EcoPoint({
+      user: newUser._id,
+      totalPoints: 0,
+      history: [],
+    });
+    await newEcoPoint.save();
 
     const token = generateToken(user._id);
     res.status(201).json({

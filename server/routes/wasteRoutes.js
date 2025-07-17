@@ -25,5 +25,6 @@ router.post(
   classifyWaste
 );
 router.get("/classifications", protect, getUserClassifications);
+router.get('/classifications/user', protect, getUserClassifications);
 
 export default router;

@@ -10,7 +10,8 @@ import blogRoutes from "./routes/blogs.js";
 import wasteGuideRoutes from "./routes/wasteGuides.js";
 import wasteRoutes from "./routes/wasteRoutes.js";
 import ecoPointsRoutes from "./routes/ecopoints.js";
-// import other routes similarly
+import profileRoutes from './routes/profileRoutes.js';
+import leaderboardRoutes from './routes/leaderboardRoutes.js';
 
 import dotenv from 'dotenv';
 dotenv.config();
@@ -38,7 +39,9 @@ app.use("/api/admin", express.json(), adminRoutes);
 app.use("/api/blogs", express.json(), blogRoutes);
 app.use("/api/waste-guides", express.json(), wasteGuideRoutes);
 app.use("/api/ecopoints", express.json(), ecoPointsRoutes);
-app.use("/api/waste", wasteRoutes);
+app.use("/api/waste", express.json(), wasteRoutes);
+app.use('/api/profile', express.json(), profileRoutes);
+app.use('/api/leaderboard', express.json(), leaderboardRoutes);
 
 
 // Error handling middleware
