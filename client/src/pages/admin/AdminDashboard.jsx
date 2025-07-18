@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { blogService } from "../../services/blogService";
 import { campaignService } from "../../services/campaignService";
@@ -52,17 +52,61 @@ const AdminDashboard = () => {
     setCampaignPreviewOpen(true);
   };
 
-  // Fetch all content for moderation
-  const { data: allBlogs = [], isLoading: blogsLoading } = useQuery({
+  // Improved query with better error handling and retry logic
+  const { data: blogsData, isLoading: blogsLoading } = useQuery({
     queryKey: ["/api/blogs", "all"],
-    queryFn: () => blogService.getBlogs(""),
-    staleTime: 30 * 1000, // 30 seconds
+    queryFn: async () => {
+      try {
+        const result = await blogService.getBlogs("");
+
+        // Normalize the data to always return an array
+        if (Array.isArray(result)) {
+          return result;
+        } else if (result?.data && Array.isArray(result.data)) {
+          return result.data;
+        } else if (result?.data?.data && Array.isArray(result.data.data)) {
+          return result.data.data;
+        }
+
+        console.warn("Unexpected blog data format:", result);
+        return [];
+      } catch (error) {
+        console.error("Error fetching blogs:", error);
+        return [];
+      }
+    },
+    staleTime: 30 * 1000,
+    retry: 2, // Retry failed requests up to 2 times
   });
 
+  // Use the blogs data directly without any further extraction
+  const allBlogs = blogsData || [];
+
+  // Log for debugging purposes
+  useEffect(() => {
+    console.log("All blogs data:", allBlogs);
+    const pending = allBlogs.filter((blog) => blog.status === "pending");
+    console.log(`Found ${pending.length} pending blogs:`, pending);
+  }, [allBlogs]);
+
+  // Helper function to safely display user information
+  const displayUser = (user) => {
+    if (!user) return "Unknown";
+    if (typeof user === "string") return user;
+    if (typeof user === "object") {
+      return (
+        user.name || user.username || (user._id ? String(user._id) : "Unknown")
+      );
+    }
+    return String(user);
+  };
+
+  // Fetch campaigns with the same retry logic
   const { data: allCampaigns = [], isLoading: campaignsLoading } = useQuery({
     queryKey: ["/api/campaigns", "all"],
     queryFn: () => campaignService.getCampaigns(""),
     staleTime: 30 * 1000,
+    retry: 2,
   });
 
   // Blog moderation mutations
@@ -78,7 +122,7 @@ const AdminDashboard = () => {
     onError: (error) => {
       toast({
         title: "Action Failed",
-        description: error.message,
+        description: error.message || "Failed to approve blog",
         variant: "destructive",
       });
     },
@@ -96,7 +140,7 @@ const AdminDashboard = () => {
     onError: (error) => {
       toast({
         title: "Action Failed",
-        description: error.message,
+        description: error.message || "Failed to reject blog",
         variant: "destructive",
       });
     },
@@ -115,7 +159,7 @@ const AdminDashboard = () => {
     onError: (error) => {
       toast({
         title: "Action Failed",
-        description: error.message,
+        description: error.message || "Failed to approve campaign",
         variant: "destructive",
       });
     },
@@ -133,7 +177,7 @@ const AdminDashboard = () => {
     onError: (error) => {
       toast({
         title: "Action Failed",
-        description: error.message,
+        description: error.message || "Failed to reject campaign",
         variant: "destructive",
       });
     },
@@ -312,8 +356,10 @@ const AdminDashboard = () => {
                             {blog.excerpt}
                           </p>
                           <div className="flex items-center space-x-4 text-xs text-gray-500 mt-2">
-                            <span>Author Name: {blog.authorName}</span>
-                            {/* <span>Author ID: {blog.authorId}</span> */}
+                            <span>
+                              Author:{" "}
+                              {blog.authorName || displayUser(blog.authorId)}
+                            </span>
                             <span>
                               {format(new Date(blog.createdAt), "MMM dd, yyyy")}
                             </span>
@@ -365,32 +411,37 @@ const AdminDashboard = () => {
               <CardTitle>All Blog Posts ({allBlogs.length})</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {allBlogs.slice(0, 10).map((blog) => (
-                  <div
-                    key={blog._id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                  >
-                    <div className="flex-1">
-                      <h4 className="font-medium text-gray-900 truncate">
-                        {blog.title}
-                      </h4>
-                      <p className="text-sm text-gray-600">
-                        Author Name: {blog.authorName}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        Author ID: {blog.authorId}
-                      </p>
+              {allBlogs.length === 0 ? (
+                <div className="text-center py-8">
+                  <BookOpen className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-600">No blog posts yet</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {allBlogs.slice(0, 10).map((blog) => (
+                    <div
+                      key={blog._id}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    >
+                      <div className="flex-1">
+                        <h4 className="font-medium text-gray-900 truncate">
+                          {blog.title}
+                        </h4>
+                        <p className="text-sm text-gray-600">
+                          Author:{" "}
+                          {blog.authorName || displayUser(blog.authorId)}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {getStatusBadge(blog.status)}
+                        <span className="text-xs text-gray-500">
+                          {format(new Date(blog.createdAt), "MMM dd")}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      {getStatusBadge(blog.status)}
-                      <span className="text-xs text-gray-500">
-                        {format(new Date(blog.createdAt), "MMM dd")}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -426,7 +477,11 @@ const AdminDashboard = () => {
                             {campaign.description}
                           </p>
                           <div className="flex items-center space-x-4 text-xs text-gray-500 mt-2">
-                            <span>Organizer Name: {campaign.authorName}</span>
+                            <span>
+                              Organizer:{" "}
+                              {campaign.authorName ||
+                                displayUser(campaign.authorId)}
+                            </span>
                             <span>{campaign.location}</span>
                             <span>
                               {format(
@@ -486,30 +541,39 @@ const AdminDashboard = () => {
               <CardTitle>All Campaigns ({allCampaigns.length})</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {allCampaigns.slice(0, 10).map((campaign) => (
-                  <div
-                    key={campaign._id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                  >
-                    <div className="flex-1">
-                      <h4 className="font-medium text-gray-900 truncate">
-                        {campaign.title}
-                      </h4>
-                      <p className="text-sm text-gray-600">
-                        Organizer Name: {campaign.authorId} •{" "}
-                        {campaign.location}
-                      </p>
+              {allCampaigns.length === 0 ? (
+                <div className="text-center py-8">
+                  <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-600">No campaigns yet</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {allCampaigns.slice(0, 10).map((campaign) => (
+                    <div
+                      key={campaign._id}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    >
+                      <div className="flex-1">
+                        <h4 className="font-medium text-gray-900 truncate">
+                          {campaign.title}
+                        </h4>
+                        <p className="text-sm text-gray-600">
+                          Organizer:{" "}
+                          {campaign.authorName ||
+                            displayUser(campaign.authorId)}{" "}
+                          • {campaign.location}
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {getStatusBadge(campaign.status)}
+                        <span className="text-xs text-gray-500">
+                          {format(new Date(campaign.startDate), "MMM dd")}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      {getStatusBadge(campaign.status)}
-                      <span className="text-xs text-gray-500">
-                        {format(new Date(campaign.startDate), "MMM dd")}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

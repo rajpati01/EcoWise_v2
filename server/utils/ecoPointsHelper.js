@@ -1,10 +1,10 @@
-import EcoPoint from "../models/ecopoints.js";
+import EcoPoint from "../models/EcoPoints.js";
 import User from "../models/user.js";
 
 /**
  * Update a user's EcoPoints for any action
  * @param {string} userId - User's MongoDB ID
- * @param {string} action - Type of action (classification, article, campaign, comment, join_campaign)
+ * @param {string} action - Type of action (classification, article, campaign, comment, join_campaign, publish_blog, comment_blog)
  * @param {number} points - Points to award
  * @param {string} description - Description of the action
  * @returns {Promise} Updated EcoPoint document
@@ -42,8 +42,35 @@ const updateEcoPoints = async (userId, action, points, description) => {
     );
 
     // Also update the user's ecoPoints field for quick access
-    await User.findByIdAndUpdate(userId, { $inc: { ecoPoints: points } });
+    const user = await User.findByIdAndUpdate(
+      userId, 
+      { $inc: { ecoPoints: points } },
+      { new: true }
+    );
+    
     console.log(`User document updated with +${points} ecoPoints`);
+    
+    // Update user level based on points if user was found
+    if (user) {
+      // Calculate new level based on total points
+      let newLevel = 'Beginner';
+      if (user.ecoPoints >= 1000) {
+        newLevel = 'Eco Master';
+      } else if (user.ecoPoints >= 500) {
+        newLevel = 'Eco Champion';
+      } else if (user.ecoPoints >= 200) {
+        newLevel = 'Eco Warrior';
+      } else if (user.ecoPoints >= 50) {
+        newLevel = 'Eco Explorer';
+      }
+      
+      // Update level if it changed
+      if (user.level !== newLevel) {
+        user.level = newLevel;
+        await user.save();
+        console.log(`User level updated to: ${newLevel}`);
+      }
+    }
 
     return userEcoPoints;
   } catch (error) {
