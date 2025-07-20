@@ -1,15 +1,15 @@
 import Blog from "../models/Blog.js";
+import User from "../models/User.js";
 import updateEcoPoints from "../utils/ecoPointsHelper.js";
 
 // Create a new blog post
-// Update your blog creation controller to award EcoPoints
 export const createBlog = async (req, res) => {
   try {
     const { title, excerpt, content, tags, authorName } = req.body;
     const userId = req.user._id;
 
     console.log(
-      `User ${userId} (${req.user.firstName} ${req.user.lastName}) creating blog`
+      `User ${userId} (${req.user.name || req.user.username}) creating blog`
     );
 
     // Create the blog
@@ -19,51 +19,32 @@ export const createBlog = async (req, res) => {
       content,
       tags,
       authorId: userId,
-      // Use firstName and lastName instead of name/username
       authorName:
-        authorName ||
-        `${req.user.firstName || ""} ${req.user.lastName || ""}`.trim() ||
-        "Anonymous User",
+        authorName || req.user.name || req.user.username || "Anonymous User",
       status: "pending",
     });
 
     const savedBlog = await blog.save();
 
-    // MISSING CODE: Award EcoPoints for creating a blog
-    const POINTS_FOR_BLOG_CREATION = 10; // Adjust based on your point system
-
+    // Award EcoPoints for creating a blog
     try {
-      // Update or create EcoPoints record
-      const ecoPointsUpdate = await EcoPoints.findOneAndUpdate(
-        { userId: userId },
-        {
-          $inc: { points: POINTS_FOR_BLOG_CREATION },
-          $push: {
-            activities: {
-              type: "blog_created",
-              points: POINTS_FOR_BLOG_CREATION,
-              timestamp: new Date(),
-              referenceId: savedBlog._id,
-            },
-          },
-        },
-        { upsert: true, new: true }
+      await updateEcoPoints(
+        userId,
+        "article", // Match the action type in your EcoPoint model
+        10, // Points for creating a blog
+        `Created blog: ${savedBlog.title}`
       );
 
-      console.log(
-        `Awarded ${POINTS_FOR_BLOG_CREATION} EcoPoints to user ${userId}, new total: ${ecoPointsUpdate.points}`
-      );
-
-      // Update user's total points (if you store it there too)
-      await User.findByIdAndUpdate(userId, {
-        $inc: { ecoPoints: POINTS_FOR_BLOG_CREATION },
-      });
+      console.log(`EcoPoints awarded to user ${userId} for creating blog`);
     } catch (pointsError) {
-      // Log error but don't fail the blog creation
       console.error("Error awarding EcoPoints:", pointsError);
+      // Continue even if points award fails
     }
 
-    res.status(201).json(savedBlog);
+    res.status(201).json({
+      success: true,
+      data: savedBlog,
+    });
   } catch (error) {
     console.error("Error creating blog:", error);
     res.status(500).json({ message: error.message });
@@ -100,16 +81,31 @@ export const getBlogs = async (req, res) => {
 
 export const getAllBlogsForAdmin = async (req, res) => {
   try {
+    console.log("Admin requesting blogs");
     const { status } = req.query;
 
     let query = {};
-    if (status) query.status = status;
+    if (status) {
+      console.log(`Filtering by status: ${status}`);
+      query.status = status;
+    }
+
+    console.log("Admin blog query:", JSON.stringify(query));
 
     const blogs = await Blog.find(query)
       .sort({ createdAt: -1 })
       .populate("authorId", "name username");
 
-    // console.log(`Found ${blogs.length} blogs for admin`);
+    console.log(`Found ${blogs.length} blogs for admin`);
+
+    // Log the first few blogs for debugging
+    if (blogs.length > 0) {
+      console.log("Sample blog:", {
+        id: blogs[0]._id,
+        title: blogs[0].title,
+        status: blogs[0].status,
+      });
+    }
 
     res.json({
       success: true,
@@ -176,7 +172,7 @@ export const approveBlog = async (req, res) => {
     blog.status = "approved";
     await blog.save();
 
-    // Award eco points to the author (25 points for publishing a blog)
+    // Award eco points to the author
     try {
       await updateEcoPoints(
         blog.authorId,
@@ -184,6 +180,7 @@ export const approveBlog = async (req, res) => {
         25, // Points for publishing a blog
         `Blog published: ${blog.title}`
       );
+
       console.log(
         `EcoPoints awarded to user ${blog.authorId} for publishing blog`
       );
@@ -263,7 +260,7 @@ export const addComment = async (req, res) => {
     blog.comments.push(comment);
     await blog.save();
 
-    // Award eco points for commenting (5 points)
+    // Award eco points for commenting
     try {
       await updateEcoPoints(
         req.user._id,
@@ -271,6 +268,7 @@ export const addComment = async (req, res) => {
         5, // Points for commenting
         `Commented on blog: ${blog.title}`
       );
+
       console.log(
         `EcoPoints awarded to user ${req.user._id} for commenting on blog`
       );

@@ -37,6 +37,8 @@ import {
   X,
   Loader2,
   RefreshCw,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -51,7 +53,7 @@ const Profile = () => {
   });
 
   const [page, setPage] = useState(1);
-  const PAGE_SIZE = 10;
+  const PAGE_SIZE = 5;
   // Fetch user's data
   // const { data: classifications = [] } = useQuery({
   //   queryKey: ["/api/waste-classifications"],
@@ -62,12 +64,16 @@ const Profile = () => {
     data: classifications = [],
     isLoading: isLoadingClassifications,
     error: classificationsError,
+    isFetching,
   } = useQuery({
     queryKey: ["/api/waste-classifications", user?._id],
-    queryFn: () => wasteService.getUserClassifications(),
+    queryFn: () => wasteService.getUserClassifications(page, PAGE_SIZE),
     enabled: !!user?._id,
     staleTime: 5 * 60 * 1000,
   });
+
+  const hasNextPage = classifications.length / PAGE_SIZE;
+  const hasPrevPage = page > 1;
 
   const { data: blogResponse, isLoading: blogsLoading } = useQuery({
     queryKey: ["/api/blogs/my"],
@@ -489,29 +495,29 @@ const Profile = () => {
                       ))}
                     </div>
                   )}
-                  {classifications.length > PAGE_SIZE && (
+                  {/* pagination */}
+                  {classifications.length > 0 && (
                     <div className="flex justify-center mt-4">
                       <Button
                         variant="outline"
                         size="sm"
-                        disabled={page === 1}
+                        disabled={!hasPrevPage || isFetching}
                         onClick={() => setPage((p) => Math.max(1, p - 1))}
                       >
+                        <ChevronLeft className="h-4 w-4 mr-1" />
                         Previous
                       </Button>
                       <span className="mx-4 self-center">
-                        Page {page} of{" "}
-                        {Math.ceil(classifications.length / PAGE_SIZE)}
+                        Page {page} 
                       </span>
                       <Button
                         variant="outline"
                         size="sm"
-                        disabled={
-                          page >= Math.ceil(classifications.length / PAGE_SIZE)
-                        }
+                        disabled={!hasNextPage || isFetching}
                         onClick={() => setPage((p) => p + 1)}
                       >
                         Next
+                        <ChevronRight className="h-4 w-4 ml-1" />
                       </Button>
                     </div>
                   )}
