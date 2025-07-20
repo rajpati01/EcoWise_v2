@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { blogService } from "../../services/blogService";
 import { campaignService } from "../../services/campaignService";
@@ -37,71 +37,60 @@ const AdminDashboard = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // ========== STATE ==========
   const [blogPreviewOpen, setBlogPreviewOpen] = useState(false);
   const [campaignPreviewOpen, setCampaignPreviewOpen] = useState(false);
   const [selectedBlog, setSelectedBlog] = useState(null);
   const [selectedCampaign, setSelectedCampaign] = useState(null);
 
-  const handlePreviewBlog = (blog) => {
-    setSelectedBlog(blog);
-    setBlogPreviewOpen(true);
-  };
-
-  const handlePreviewCampaign = (campaign) => {
-    setSelectedCampaign(campaign);
-    setCampaignPreviewOpen(true);
-  };
-
-  // Improved query with better error handling and retry logic
-  const { data: blogsData, isLoading: blogsLoading } = useQuery({
+  // ========== QUERIES ==========
+  // Query for all blogs (admin view)
+  const { data: allBlogsData, isLoading: allBlogsLoading } = useQuery({
     queryKey: ["/api/blogs", "all"],
     queryFn: async () => {
       try {
-        const result = await blogService.getBlogs("");
-
+        // Use "all" as a parameter to get all blogs from admin endpoint
+        const result = await blogService.getBlogs("all");
+        
         // Normalize the data to always return an array
-        if (Array.isArray(result)) {
-          return result;
-        } else if (result?.data && Array.isArray(result.data)) {
-          return result.data;
-        } else if (result?.data?.data && Array.isArray(result.data.data)) {
-          return result.data.data;
-        }
-
+        if (Array.isArray(result)) return result;
+        if (result?.data && Array.isArray(result.data)) return result.data;
+        if (result?.data?.data && Array.isArray(result.data.data)) return result.data.data;
+        
         console.warn("Unexpected blog data format:", result);
         return [];
       } catch (error) {
-        console.error("Error fetching blogs:", error);
+        console.error("Error fetching all blogs:", error);
         return [];
       }
     },
     staleTime: 30 * 1000,
-    retry: 2, // Retry failed requests up to 2 times
+    retry: 2,
   });
 
-  // Use the blogs data directly without any further extraction
-  const allBlogs = blogsData || [];
+  // Query specifically for pending blogs
+  const { data: pendingBlogsData, isLoading: pendingBlogsLoading } = useQuery({
+    queryKey: ["/api/blogs", "pending"],
+    queryFn: async () => {
+      try {
+        const result = await blogService.getBlogs("pending");
+        
+        if (Array.isArray(result)) return result;
+        if (result?.data && Array.isArray(result.data)) return result.data;
+        if (result?.data?.data && Array.isArray(result.data.data)) return result.data.data;
+        
+        console.warn("Unexpected pending blog data format:", result);
+        return [];
+      } catch (error) {
+        console.error("Error fetching pending blogs:", error);
+        return [];
+      }
+    },
+    staleTime: 30 * 1000,
+    retry: 2,
+  });
 
-  // Log for debugging purposes
-  useEffect(() => {
-    console.log("All blogs data:", allBlogs);
-    const pending = allBlogs.filter((blog) => blog.status === "pending");
-    console.log(`Found ${pending.length} pending blogs:`, pending);
-  }, [allBlogs]);
-
-  // Helper function to safely display user information
-  const displayUser = (user) => {
-    if (!user) return "Unknown";
-    if (typeof user === "string") return user;
-    if (typeof user === "object") {
-      return (
-        user.name || user.username || (user._id ? String(user._id) : "Unknown")
-      );
-    }
-    return String(user);
-  };
-
-  // Fetch campaigns with the same retry logic
+  // Query for campaigns
   const { data: allCampaigns = [], isLoading: campaignsLoading } = useQuery({
     queryKey: ["/api/campaigns", "all"],
     queryFn: () => campaignService.getCampaigns(""),
@@ -109,6 +98,7 @@ const AdminDashboard = () => {
     retry: 2,
   });
 
+  // ========== MUTATIONS ==========
   // Blog moderation mutations
   const approveBlogMutation = useMutation({
     mutationFn: (id) => blogService.approveBlog(id),
@@ -183,6 +173,26 @@ const AdminDashboard = () => {
     },
   });
 
+  // ========== HELPER FUNCTIONS ==========
+  const handlePreviewBlog = (blog) => {
+    setSelectedBlog(blog);
+    setBlogPreviewOpen(true);
+  };
+
+  const handlePreviewCampaign = (campaign) => {
+    setSelectedCampaign(campaign);
+    setCampaignPreviewOpen(true);
+  };
+  
+  const displayUser = (user) => {
+    if (!user) return "Unknown";
+    if (typeof user === "string") return user;
+    if (typeof user === "object") {
+      return user.name || user.username || (user._id ? String(user._id) : "Unknown");
+    }
+    return String(user);
+  };
+
   const getStatusBadge = (status) => {
     switch (status) {
       case "approved":
@@ -196,16 +206,15 @@ const AdminDashboard = () => {
     }
   };
 
-  const pendingBlogs = allBlogs.filter((blog) => blog.status === "pending");
-  const pendingCampaigns = allCampaigns.filter(
-    (campaign) => campaign.status === "pending"
-  );
-  const approvedBlogs = allBlogs.filter((blog) => blog.status === "approved");
-  const approvedCampaigns = allCampaigns.filter(
-    (campaign) => campaign.status === "approved"
-  );
+  // ========== DERIVED DATA ==========
+  const allBlogs = allBlogsData || [];
+  const pendingBlogs = pendingBlogsData || [];
+  const pendingCampaigns = allCampaigns.filter(campaign => campaign.status === "pending");
+  const approvedBlogs = allBlogs.filter(blog => blog.status === "approved");
+  const approvedCampaigns = allCampaigns.filter(campaign => campaign.status === "approved");
 
-  if (blogsLoading || campaignsLoading) {
+  // ========== LOADING STATE ==========
+  if (allBlogsLoading || pendingBlogsLoading || campaignsLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center py-12">
@@ -216,6 +225,7 @@ const AdminDashboard = () => {
     );
   }
 
+  // ========== RENDER ==========
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Header */}
@@ -578,6 +588,8 @@ const AdminDashboard = () => {
           </Card>
         </TabsContent>
       </Tabs>
+      
+      {/* Dialogs */}
       <BlogPreviewDialog
         open={blogPreviewOpen}
         onOpenChange={setBlogPreviewOpen}

@@ -1,5 +1,5 @@
 import Blog from "../models/Blog.js";
-import User from "../models/User.js";
+import User from "../models/user.js";
 import updateEcoPoints from "../utils/ecoPointsHelper.js";
 
 // Create a new blog post
@@ -123,6 +123,7 @@ export const getUserBlogs = async (req, res) => {
     const blogs = await Blog.find({ authorId: req.user._id }).sort({
       createdAt: -1,
     });
+
     res.json({
       success: true,
       data: blogs,

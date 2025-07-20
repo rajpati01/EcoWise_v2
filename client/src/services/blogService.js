@@ -3,11 +3,16 @@ import { apiService } from "./api";
 class BlogService {
   async getBlogs(status = "") {
     try {
-      // Use the public endpoint for general blog listing
-      const endpoint =
-        status === "pending" || status === "rejected"
-          ? `/blogs/admin/all?status=${status}` // Admin-only endpoint for pending/rejected
-          : `/blogs`; // Public endpoint for approved blogs
+      let endpoint = "/blogs";
+
+      if (status === "pending") {
+        endpoint = `/blogs/admin?status=pending`; // Endpoint for pending blogs
+      } else if (status === "rejected") {
+        endpoint = `/blogs/admin?status=rejected`; // Endpoint for rejected blogs
+      } else if (status === "all" || status === "") {
+        // For admin dashboard "all blogs" section, get all blogs regardless of status
+        endpoint = `/blogs/admin`; // Admin endpoint with no status filter
+      }
 
       const response = await apiService.get(endpoint);
 
@@ -43,28 +48,35 @@ class BlogService {
     try {
       const response = await apiService.get("/blogs/my");
 
-      // Handle nested response structures
-      if (response?.data && Array.isArray(response.data)) {
-        return response.data;
-      } else if (
-        response?.success &&
-        response?.data &&
-        Array.isArray(response.data)
-      ) {
+      // Handle different response structures with more detailed logging
+      if (response?.data?.data && Array.isArray(response.data.data)) {
+        console.log(
+          "Found blogs in response.data.data:",
+          response.data.data.length
+        );
+        return response.data.data;
+      } else if (response?.data && Array.isArray(response.data)) {
+        console.log("Found blogs in response.data:", response.data.length);
         return response.data;
       } else if (Array.isArray(response)) {
+        console.log("Response itself is array:", response.length);
         return response;
+      } else if (response?.data?.success && response?.data?.data) {
+        console.log("Found blogs in response.data.data with success property");
+        return Array.isArray(response.data.data) ? response.data.data : [];
       }
 
-      // Fallback for unknown structure
-      console.warn("Unexpected blog response format:", response);
+      // Log the full response for debugging
+      console.warn(
+        "Unexpected blog response format. Full response:",
+        JSON.stringify(response)
+      );
       return [];
     } catch (error) {
-      console.error("Error fetching user blogs:", error);
+      console.error("Error in getMyBlogs:", error.response || error);
       return [];
     }
   }
-
   async createBlog(blogData) {
     return apiService.post("/blogs", blogData);
   }

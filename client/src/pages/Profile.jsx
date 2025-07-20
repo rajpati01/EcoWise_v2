@@ -52,13 +52,31 @@ const Profile = () => {
     email: user?.email || "",
   });
 
+  // calculate the level dynamically
+  const getUserLevel = (points) => {
+    const pointsValue = points || 0;
+
+    if (pointsValue >= 1000) return "Eco Master";
+    if (pointsValue >= 500) return "Eco Champion";
+    if (pointsValue >= 200) return "Eco Warrior";
+    if (pointsValue >= 50) return "Eco Explorer";
+    return "Beginner";
+  };
+
+  // Get the ecoPoints value safely (handling both camelCase and lowercase)
+  const userEcoPoints = user?.ecoPoints || 0;
+
+  // Calculate the user's level dynamically
+  const userLevel = user?.level || getUserLevel(userEcoPoints);
+
+  // Log the derived values for debugging
+  console.log("Derived user data:", {
+    ecoPoints: userEcoPoints,
+    calculatedLevel: userLevel,
+  });
+
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 5;
-  // Fetch user's data
-  // const { data: classifications = [] } = useQuery({
-  //   queryKey: ["/api/waste-classifications"],
-  //   staleTime: 5 * 60 * 1000,
-  // });
 
   const {
     data: classifications = [],
@@ -75,13 +93,23 @@ const Profile = () => {
   const hasNextPage = classifications.length / PAGE_SIZE;
   const hasPrevPage = page > 1;
 
-  const { data: blogResponse, isLoading: blogsLoading } = useQuery({
+  const {
+    data: userBlogs = [],
+    isLoading: blogsLoading,
+    error: blogsError,
+  } = useQuery({
     queryKey: ["/api/blogs/my"],
-    queryFn: () => blogService.getMyBlogs(),
-    enabled: !!user?._id,
+    queryFn: async () => {
+      try {
+        const result = await blogService.getMyBlogs();
+        return result;
+      } catch (error) {
+        console.error("Error fetching user blogs:", error);
+        return [];
+      }
+    },
+    staleTime: 60 * 1000, // Cache for 1 minute
   });
-
-  const userBlogs = blogResponse?.data || [];
 
   const { data: userCampaigns = [] } = useQuery({
     queryKey: ["/api/campaigns/my"],
@@ -103,10 +131,6 @@ const Profile = () => {
           return data;
         }
 
-        console.log(
-          "Falling back to client-side filtering for joined campaigns"
-        );
-
         // Fallback: Filter all campaigns client-side
         const allCampaigns = await campaignService.getCampaigns();
         if (!user?._id) {
@@ -115,7 +139,6 @@ const Profile = () => {
         }
 
         const userId = user._id.toString();
-        console.log(`Filtering campaigns for user ID: ${userId}`);
 
         return allCampaigns.filter((campaign) => {
           if (!campaign.participants || !Array.isArray(campaign.participants)) {
@@ -204,19 +227,19 @@ const Profile = () => {
       "Eco Master": { min: 1000, max: Infinity },
     };
 
-    const currentLevel = levels[user?.level] || levels["Beginner"];
+    const currentLevel = levels[userLevel] || levels["Beginner"];
     const progress =
       currentLevel.max === Infinity
         ? 100
         : Math.min(
-            (((user?.ecoPoints || 0) - currentLevel.min) /
+            ((userEcoPoints - currentLevel.min) /
               (currentLevel.max - currentLevel.min)) *
               100,
             100
           );
 
     return {
-      current: user?.ecoPoints || 0,
+      current: userEcoPoints,
       required:
         currentLevel.max === Infinity ? "Max Level" : currentLevel.max + 1,
       percentage: Math.round(progress),
@@ -363,9 +386,14 @@ const Profile = () => {
             <CardContent className="space-y-4">
               <div className="text-center">
                 <div className="text-3xl font-bold text-primary">
-                  {user?.ecoPoints?.toLocaleString() || 0}
+                  {userEcoPoints.toLocaleString()}
                 </div>
                 <div className="text-sm text-gray-600">Eco Points</div>
+                <div className="mt-2">
+                  <Badge className="bg-primary/10 text-primary border-primary/20">
+                    {userLevel}
+                  </Badge>
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -507,9 +535,7 @@ const Profile = () => {
                         <ChevronLeft className="h-4 w-4 mr-1" />
                         Previous
                       </Button>
-                      <span className="mx-4 self-center">
-                        Page {page} 
-                      </span>
+                      <span className="mx-4 self-center">Page {page}</span>
                       <Button
                         variant="outline"
                         size="sm"
@@ -572,38 +598,6 @@ const Profile = () => {
                 </CardContent>
               </Card>
             </TabsContent>
-
-            {/* Debug information - Remove after fixing
-            <div className="mt-4 p-4 bg-gray-100 rounded-lg text-xs">
-              <h4 className="font-semibold">Debug Info:</h4>
-              <div className="mt-2">
-                <p>Classifications Count: {classifications.length}</p>
-                <p>
-                  Classifications Loading:{" "}
-                  {isLoadingClassifications ? "Yes" : "No"}
-                </p>
-                <p>
-                  Classifications Error:{" "}
-                  {classificationsError ? classificationsError.message : "None"}
-                </p>
-                <p>User ID: {user?._id}</p>
-                <p>
-                  Classifications Query Key:{" "}
-                  {JSON.stringify(["/api/waste/classifications/user"])}
-                </p>
-                <button
-                  className="px-2 py-1 bg-blue-100 text-blue-800 rounded mt-2 text-xs"
-                  onClick={() => {
-                    console.log("Manual classification fetch");
-                    wasteService.getUserClassifications().then((data) => {
-                      console.log("Manual fetch result:", data);
-                    });
-                  }}
-                >
-                  Test API Call
-                </button>
-              </div>
-            </div> */}
 
             <TabsContent value="campaigns" className="space-y-4">
               <Card>
