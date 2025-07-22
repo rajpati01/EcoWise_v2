@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 const WasteClassification = () => {
   const { data: classifications = [], isLoading } = useQuery({
     queryKey: ['/api/waste-classifications'],
+    queryFn: () => wasteService.getClassifications(),
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 

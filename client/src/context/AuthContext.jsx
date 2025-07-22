@@ -77,8 +77,6 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("token", response.token);
       localStorage.setItem("user", JSON.stringify(response.user));
 
-      console.log("🔐 Login response:", response);
-
       dispatch({
         type: "LOGIN_SUCCESS",
         payload: response,

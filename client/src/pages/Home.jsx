@@ -19,19 +19,56 @@ import {
   Recycle,
   BarChart3,
   Calendar,
+  Crown,
 } from "lucide-react";
 
 const Home = () => {
   // Fetch leaderboard data
   const { data: leaderboard = [] } = useQuery({
     queryKey: ["/api/users/leaderboard"],
+    queryFn: () => apiService.get("/users/leaderboard"),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
+  // Helper: calculate level from ecoPoints
+  function getUserLevel(points) {
+    if (points >= 1000) return "Eco Master";
+    if (points >= 500) return "Eco Champion";
+    if (points >= 200) return "Eco Warrior";
+    if (points >= 50) return "Eco Explorer";
+    return "Beginner";
+  }
+
+  // Fetch global stats from the backend
+  const { data: statsData, isLoading: statsLoading } = useQuery({
+    queryKey: ["/api/stats/global"],
+    queryFn: () => apiService.get("/stats/global"),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Stats for the hero section
   const stats = [
-    { label: "Waste Items Classified", value: "12,543", icon: Camera },
-    { label: "Active Users", value: "3,847", icon: Users },
-    { label: "Eco Points Earned", value: "156,920", icon: Award },
+    {
+      label: "Waste Items Classified",
+      value: statsLoading
+        ? "..."
+        : statsData?.wasteItemsClassified?.toLocaleString() ?? "0",
+      icon: Camera,
+    },
+    {
+      label: "Active Users",
+      value: statsLoading
+        ? "..."
+        : statsData?.activeUsers?.toLocaleString() ?? "0",
+      icon: Users,
+    },
+    {
+      label: "Eco Points Earned",
+      value: statsLoading
+        ? "..."
+        : statsData?.ecoPointsEarned?.toLocaleString() ?? "0",
+      icon: Award,
+    },
   ];
 
   const features = [
@@ -88,6 +125,41 @@ const Home = () => {
       color: "from-indigo-50 to-indigo-100",
       iconBg: "bg-indigo-600",
       link: "/profile",
+    },
+  ];
+
+  // Fetch additional stats for the CTA section
+  const { data: ctaStatsData, isLoading: ctaStatsLoading } = useQuery({
+    queryKey: ["/api/stats/cta"],
+    queryFn: () => apiService.get("/stats/cta"),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Stats for CTA section
+  const ctaStats = [
+    {
+      label: "Active Users",
+      value: ctaStatsLoading
+        ? "..."
+        : ctaStatsData?.activeUsers?.toLocaleString() ?? "0",
+    },
+    {
+      label: "Items Classified",
+      value: ctaStatsLoading
+        ? "..."
+        : ctaStatsData?.itemsClassified?.toLocaleString() ?? "0",
+    },
+    {
+      label: "Communities",
+      value: ctaStatsLoading
+        ? "..."
+        : ctaStatsData?.communities?.toLocaleString() ?? "0",
+    },
+    {
+      label: "Points Earned",
+      value: ctaStatsLoading
+        ? "..."
+        : ctaStatsData?.pointsEarned?.toLocaleString() ?? "0",
     },
   ];
 
@@ -261,56 +333,80 @@ const Home = () => {
 
           <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-3xl p-8 md:p-12">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
-              {/* Leaderboard */}
-              <div className="space-y-4">
-                {leaderboard.slice(0, 3).map((user, index) => (
-                  <Card
-                    key={user.id}
-                    className="bg-white hover:shadow-md transition-shadow"
-                  >
-                    <CardContent className="p-6">
-                      <div className="flex items-center space-x-4">
-                        <div
-                          className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                            index === 0
-                              ? "bg-gradient-to-br from-amber-400 to-amber-600"
-                              : index === 1
-                              ? "bg-gradient-to-br from-gray-400 to-gray-600"
-                              : "bg-gradient-to-br from-amber-600 to-amber-800"
-                          }`}
-                        >
-                          {index < 3 ? (
-                            <Trophy className="text-white h-6 w-6" />
-                          ) : (
-                            <span className="text-white font-bold text-lg">
-                              {index + 1}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-gray-900">
-                            {user.username}
-                          </h4>
-                          <Badge variant="secondary" className="text-xs">
-                            {user.level}
-                          </Badge>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-xl font-bold text-accent">
-                            {user.ecoPoints?.toLocaleString() || 0}
-                          </div>
-                          <div className="text-sm text-gray-600">points</div>
-                        </div>
+              {/* Top 3 Podium */}
+              <div className="grid grid-cols-3 gap-4 mb-8">
+                {/* 2nd Place */}
+                {leaderboard[1] && (
+                  <Card className="bg-gradient-to-br from-gray-100 to-gray-200">
+                    <CardContent className="p-6 text-center">
+                      <div className="w-16 h-16 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Trophy className="h-8 w-8 text-white" />
                       </div>
+                      <h3 className="font-bold text-gray-900 truncate">
+                        {leaderboard[1].username}
+                      </h3>
+                      <Badge variant="secondary" className="mb-2">
+                        {leaderboard[1].level ||
+                          getUserLevel(leaderboard[1].ecoPoints)}
+                      </Badge>
+                      <div className="text-xl font-bold text-gray-700">
+                        {leaderboard[1].ecoPoints.toLocaleString()}
+                      </div>
+                      <div className="text-sm text-gray-600">points</div>
                     </CardContent>
                   </Card>
-                ))}
+                )}
 
-                <div className="text-center pt-4">
+                {/* 1st Place */}
+                {leaderboard[0] && (
+                  <Card className="bg-gradient-to-br from-amber-100 to-amber-200 scale-105 z-10">
+                    <CardContent className="p-6 text-center">
+                      <div className="w-20 h-20 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Crown className="h-10 w-10 text-white" />
+                      </div>
+                      <h3 className="font-bold text-gray-900 truncate">
+                        {leaderboard[0].username}
+                      </h3>
+                      <Badge className="bg-amber-600 mb-2">
+                        {leaderboard[0].level ||
+                          getUserLevel(leaderboard[0].ecoPoints)}
+                      </Badge>
+                      <div className="text-2xl font-bold text-amber-700">
+                        {leaderboard[0].ecoPoints.toLocaleString()}
+                      </div>
+                      <div className="text-sm text-gray-600">points</div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* 3rd Place */}
+                {leaderboard[2] && (
+                  <Card className="bg-gradient-to-br from-amber-50 to-amber-100">
+                    <CardContent className="p-6 text-center">
+                      <div className="w-16 h-16 bg-gradient-to-br from-amber-600 to-amber-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Award className="h-8 w-8 text-white" />
+                      </div>
+                      <h3 className="font-bold text-gray-900 truncate">
+                        {leaderboard[2].username}
+                      </h3>
+                      <Badge variant="secondary" className="mb-2">
+                        {leaderboard[2].level ||
+                          getUserLevel(leaderboard[2].ecoPoints)}
+                      </Badge>
+                      <div className="text-xl font-bold text-amber-700">
+                        {leaderboard[2].ecoPoints.toLocaleString()}
+                      </div>
+                      <div className="text-sm text-gray-600">points</div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Achievement Showcase and View Full Leaderboard Button */}
+                <div className="text-center pt-4 col-span-3 flex justify-center">
                   <Link href="/leaderboard">
                     <Button className="bg-accent hover:bg-accent/90">
                       View Full Leaderboard
-                    </Button>
+                    </Button> 
                   </Link>
                 </div>
               </div>
@@ -425,12 +521,7 @@ const Home = () => {
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-emerald-100">
-              {[
-                { label: "Active Users", value: "10k+" },
-                { label: "Items Classified", value: "50k+" },
-                { label: "Communities", value: "500+" },
-                { label: "Points Earned", value: "1M+" },
-              ].map((stat, index) => (
+              {ctaStats.map((stat, index) => (
                 <div key={index}>
                   <div className="text-2xl font-bold">{stat.value}</div>
                   <div className="text-sm">{stat.label}</div>

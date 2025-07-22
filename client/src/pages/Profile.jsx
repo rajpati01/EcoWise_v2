@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../hooks/useAuth";
 import { authService } from "../services/authService";
@@ -52,9 +52,36 @@ const Profile = () => {
     email: user?.email || "",
   });
 
+  const { data: freshUser } = useQuery({
+    queryKey: ["/api/users/profile", user && user._id],
+    queryFn: () => authService.getProfile(),
+    enabled: !!(user && user._id),
+    staleTime: 60 * 1000,
+  });
+
+  // Only update context if fresh data is actually different
+  useEffect(() => {
+    if (
+      freshUser &&
+      freshUser.data &&
+      freshUser.data._id === user._id && // Same user
+      (freshUser.data.ecoPoints !== user.ecoPoints ||
+        freshUser.data.username !== user.username ||
+        freshUser.data.email !== user.email)
+    ) {
+      updateUser(freshUser.data);
+    }
+    // Only run when freshUser.data or user changes
+  }, [freshUser?.data, user, updateUser]);
+
+  // Use the most up-to-date data for ecoPoints and username
+  const userEcoPoints = freshUser?.data?.ecoPoints ?? user?.ecoPoints ?? 0;
+  const userName = freshUser?.data?.username ?? user?.username ?? "";
+
   // calculate the level dynamically
   const getUserLevel = (points) => {
-    const pointsValue = points || 0;
+    // const pointsValue = points || 0;
+    const pointsValue = userEcoPoints;
 
     if (pointsValue >= 1000) return "Eco Master";
     if (pointsValue >= 500) return "Eco Champion";
@@ -64,16 +91,10 @@ const Profile = () => {
   };
 
   // Get the ecoPoints value safely (handling both camelCase and lowercase)
-  const userEcoPoints = user?.ecoPoints || 0;
+  // const userEcoPoints = user?.ecoPoints || 0;
 
   // Calculate the user's level dynamically
   const userLevel = user?.level || getUserLevel(userEcoPoints);
-
-  // Log the derived values for debugging
-  console.log("Derived user data:", {
-    ecoPoints: userEcoPoints,
-    calculatedLevel: userLevel,
-  });
 
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 5;
@@ -315,10 +336,10 @@ const Profile = () => {
                 <Avatar className="h-24 w-24 mx-auto mb-4">
                   <AvatarImage src={user?.profileImage} alt={user?.username} />
                   <AvatarFallback className="text-2xl">
-                    {user?.username?.charAt(0).toUpperCase() || "U"}
+                    {userName ? userName.charAt(0).toUpperCase() : "U"}
                   </AvatarFallback>
                 </Avatar>
-                <Badge className="text-sm">{user?.level}</Badge>
+                <Badge className="text-sm">{userLevel}</Badge>
               </div>
 
               <div className="space-y-4">
@@ -335,7 +356,7 @@ const Profile = () => {
                   ) : (
                     <div className="flex items-center space-x-2 mt-1">
                       <User className="h-4 w-4 text-gray-400" />
-                      <span>{user?.username}</span>
+                      <span>{userName}</span>
                     </div>
                   )}
                 </div>
