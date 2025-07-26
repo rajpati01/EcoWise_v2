@@ -27,10 +27,8 @@ class BlogService {
 
   async getBlogById(id) {
     try {
-      console.log(`Fetching blog with ID: ${id}`);
+      // console.log(`Fetching blog with ID: ${id}`);
       const response = await apiService.get(`/blogs/${id}`);
-
-      console.log("Blog detail API response:", response);
 
       // Handle different response structures
       if (response?.data?.data) return response.data.data;
@@ -89,12 +87,45 @@ class BlogService {
     return apiService.delete(`/blogs/${id}`);
   }
 
-  async getComments(blogId) {
-    return apiService.get(`/blogs/${blogId}/comments`);
+  async getComments(blogId, page = 1, limit = 10) {
+    try {
+      const response = await apiService.get(
+        `/blogs/${blogId}/comments?page=${page}&limit=${limit}`
+      );
+
+      // Return the data in the expected format
+      if (response?.data?.data) {
+        return response.data; // Return the whole object with data, totalPages, etc.
+      } else if (response?.data && Array.isArray(response.data)) {
+        return response.data; // Return just the array if that's what the API gives
+      }
+      return response;
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+      throw error;
+    }
   }
 
   async addComment(blogId, content) {
-    return apiService.post(`/blogs/${blogId}/comments`, { content });
+    try {
+      const response = await apiService.post(`/blogs/${blogId}/comments`, {
+        content,
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      throw error;
+    }
+  }
+
+  async toggleLike(blogId) {
+    try {
+      const response = await apiService.post(`/blogs/${blogId}/like`);
+      return response.data;
+    } catch (error) {
+      console.error("Error toggling like:", error);
+      throw error;
+    }
   }
 
   // Admin functions

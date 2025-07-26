@@ -1,7 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { blogService } from "../services/blogService";
+import { useAuth } from "../hooks/useAuth";
+import { useToast } from "../components/ui/use-toast";
+import CommentForm from "../components/CommentForm";
+import CommentList from "../components/CommentList";
 import {
   Card,
   CardContent,
@@ -26,6 +30,10 @@ import ReactMarkdown from "react-markdown";
 const BlogDetail = () => {
   const { id } = useParams();
   const [, setLocation] = useLocation();
+  const { user, isAuthenticated } = useAuth();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [showComments, setShowComments] = useState(false);
 
   // Helper function for safely formatting dates
   const formatDate = (dateString) => {
@@ -38,32 +46,51 @@ const BlogDetail = () => {
     }
   };
 
+  const { data: commentCount, isLoading: countLoading } = useQuery({
+    queryKey: [`/api/blogs/${id}/comments/count`],
+    queryFn: async () => {
+      try {
+        const result = await blogService.getComments(id, 1, 1);
+        return result.totalComments || 0;
+      } catch (error) {
+        console.error("Error fetching comment count:", error);
+        return 0;
+      }
+    },
+    enabled: !!id && showComments, // Only run if we have a blog ID and comments are shown
+  });
+
   // Safe author display function
   const displayAuthor = (blog) => {
     if (!blog) return "Unknown";
-    
+
     if (blog.authorName && blog.authorName !== "Unknown") {
       return blog.authorName;
     }
-    
+
     if (blog.authorId) {
       if (typeof blog.authorId === "object") {
-        return blog.authorId.name || blog.authorId.username || "Community Member";
+        return (
+          blog.authorId.name || blog.authorId.username || "Community Member"
+        );
       }
       return "Community Member";
     }
-    
+
     return "Anonymous";
   };
 
   // Fetch blog data
-  const { data: blog, isLoading, error } = useQuery({
+  const {
+    data: blog,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["/api/blogs", id],
     queryFn: async () => {
       try {
         const result = await blogService.getBlogById(id);
-        console.log("Blog detail data:", result);
-        
+
         // Normalize data structure based on API response
         if (result?.data) {
           return result.data;
@@ -75,6 +102,52 @@ const BlogDetail = () => {
       }
     },
   });
+
+  // Check if the current user has liked this blog
+  const hasUserLiked = blog?.likes?.some((like) =>
+    typeof like === "object" ? like._id === user?._id : like === user?._id
+  );
+
+  // Toggle like mutation
+  const likeMutation = useMutation({
+    mutationFn: () => blogService.toggleLike(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["/api/blogs", id]);
+      toast({
+        title: hasUserLiked ? "Like removed" : "Blog liked",
+        description: hasUserLiked
+          ? "You've removed your like from this blog"
+          : "You've liked this blog",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update like status. Please try again.",
+        variant: "destructive",
+      });
+      console.error("Like error:", error);
+    },
+  });
+
+  // Handle like button click
+  const handleLikeClick = () => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Login Required",
+        description: "Please login to like this blog",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    likeMutation.mutate();
+  };
+
+  // Handle new comment added
+  const handleCommentAdded = () => {
+    queryClient.invalidateQueries(["/api/blogs", id]);
+  };
 
   if (isLoading) {
     return (
@@ -169,11 +242,13 @@ const BlogDetail = () => {
           {/* Main Content */}
           <div className="prose prose-green max-w-none">
             {/* If you're using Markdown, render with ReactMarkdown */}
-            {blog.content && typeof blog.content === 'string' && blog.content.includes('#') ? (
+            {blog.content &&
+            typeof blog.content === "string" &&
+            blog.content.includes("#") ? (
               <ReactMarkdown>{blog.content}</ReactMarkdown>
             ) : (
               // Otherwise, split paragraphs and render them
-              blog.content.split('\n\n').map((paragraph, index) => (
+              blog.content.split("\n\n").map((paragraph, index) => (
                 <p key={index} className="mb-4">
                   {paragraph}
                 </p>
@@ -186,21 +261,40 @@ const BlogDetail = () => {
       {/* Interaction Buttons */}
       <div className="flex justify-between">
         <div className="flex space-x-4">
-          <Button variant="outline" className="flex items-center">
-            <ThumbsUp className="mr-2 h-4 w-4" />
-            <span>Like</span>
+          <Button
+            variant={hasUserLiked ? "default" : "outline"}
+            className="flex items-center"
+            onClick={handleLikeClick}
+            disabled={likeMutation.isLoading}
+          >
+            <ThumbsUp
+              className={`mr-2 h-4 w-4 ${hasUserLiked ? "text-white" : ""}`}
+            />
+            <span>{hasUserLiked ? "Liked" : "Like"}</span>
             {blog.likes?.length > 0 && (
-              <Badge variant="secondary" className="ml-2">
+              <Badge
+                variant={hasUserLiked ? "outline" : "secondary"}
+                className="ml-2"
+              >
                 {blog.likes.length}
               </Badge>
             )}
           </Button>
-          <Button variant="outline" className="flex items-center">
-            <MessageSquare className="mr-2 h-4 w-4" />
-            <span>Comment</span>
-            {blog.comments?.length > 0 && (
-              <Badge variant="secondary" className="ml-2">
-                {blog.comments.length}
+          <Button
+            variant={showComments ? "default" : "outline"}
+            className="flex items-center"
+            onClick={() => setShowComments(!showComments)}
+          >
+            <MessageSquare
+              className={`mr-2 h-4 w-4 ${showComments ? "text-white" : ""}`}
+            />
+            <span>{showComments ? "Hide Comments" : "Comments"}</span>
+            {!countLoading && commentCount > 0 && (
+              <Badge
+                variant={showComments ? "outline" : "secondary"}
+                className="ml-2"
+              >
+                {commentCount}
               </Badge>
             )}
           </Button>
@@ -211,7 +305,27 @@ const BlogDetail = () => {
         </Button>
       </div>
 
-      {/* Comments Section - Add your comment logic here */}
+      {/* Comments Section */}
+      {showComments && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xl flex items-center">
+              <MessageSquare className="mr-2 h-5 w-5" />
+              Comments ({countLoading ? "..." : commentCount})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Comment Form */}
+            <CommentForm blogId={id} onCommentAdded={handleCommentAdded} />
+
+            {/* Separator */}
+            <Separator />
+
+            {/* Comments List - now uses blogId to fetch its own data */}
+            <CommentList blogId={id} />
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
