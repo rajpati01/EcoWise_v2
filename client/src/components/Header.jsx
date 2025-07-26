@@ -1,34 +1,50 @@
-import { useState } from 'react';
-import { Link, useLocation } from 'wouter';
-import { useAuth } from '../hooks/useAuth';
-import { Button } from '../components/ui/button';
-import { 
+import { useState } from "react";
+import { Link, useLocation } from "wouter";
+import { useAuth } from "../hooks/useAuth";
+import { Button } from "../components/ui/button";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '../components/ui/dropdown-menu';
-import { Avatar, AvatarImage, AvatarFallback } from '../components/ui/avatar';
-import { Sheet, SheetContent, SheetTrigger } from '../components/ui/sheet';
-import { Leaf, Menu, User, LogOut, Settings, Award } from 'lucide-react';
+} from "../components/ui/dropdown-menu";
+import { Avatar, AvatarImage, AvatarFallback } from "../components/ui/avatar";
+import { Sheet, SheetContent, SheetTrigger } from "../components/ui/sheet";
+import {
+  Leaf,
+  Menu,
+  User,
+  LogOut,
+  Settings,
+  Award,
+  UserLock,
+} from "lucide-react";
 
 const Header = () => {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const { user, isAuthenticated, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  function getUserLevel(points) {
+    if (points >= 1000) return "Eco Master";
+    if (points >= 500) return "Eco Champion";
+    if (points >= 200) return "Eco Warrior";
+    if (points >= 50) return "Eco Explorer";
+    return "Beginner";
+  }
+
   const navigationItems = [
-    { name: 'Home', href: '/' },
-    { name: 'Classify Waste', href: '/classify' },
-    { name: 'Campaigns', href: '/campaigns' },
-    { name: 'Blog', href: '/blog' },
-    { name: 'Leaderboard', href: '/leaderboard' },
+    { name: "Home", href: "/" },
+    { name: "Classify Waste", href: "/classify" },
+    { name: "Campaigns", href: "/campaigns" },
+    { name: "Blog", href: "/blog" },
+    { name: "Leaderboard", href: "/leaderboard" },
   ];
 
   // Add admin navigation for admin users
-  if (user?.role === 'admin') {
-    navigationItems.push({ name: 'Admin', href: '/admin' });
+  if (user?.role === "admin") {
+    navigationItems.push({ name: "Admin", href: "/admin" });
   }
 
   const isActive = (href) => location === href;
@@ -36,6 +52,7 @@ const Header = () => {
   const handleLogout = () => {
     logout();
     setMobileMenuOpen(false);
+    setLocation("/");
   };
 
   return (
@@ -49,16 +66,18 @@ const Header = () => {
               <span className="text-xl font-bold text-gray-900">EcoWise</span>
             </div>
           </Link>
-          
+
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             {navigationItems.map((item) => (
               <Link key={item.name} href={item.href}>
-                <span className={`font-medium transition-colors cursor-pointer ${
-                  isActive(item.href) 
-                    ? 'text-primary' 
-                    : 'text-gray-700 hover:text-primary'
-                }`}>
+                <span
+                  className={`font-medium transition-colors cursor-pointer ${
+                    isActive(item.href)
+                      ? "text-primary"
+                      : "text-gray-700 hover:text-primary"
+                  }`}
+                >
                   {item.name}
                 </span>
               </Link>
@@ -80,11 +99,17 @@ const Header = () => {
                 {/* User Menu */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                    <Button
+                      variant="ghost"
+                      className="relative h-10 w-10 rounded-full"
+                    >
                       <Avatar className="h-10 w-10">
-                        <AvatarImage src={user?.profileImage} alt={user?.username} />
+                        <AvatarImage
+                          src={user?.profileImage}
+                          alt={user?.username}
+                        />
                         <AvatarFallback>
-                          {user?.username?.charAt(0).toUpperCase() || 'U'}
+                          {user?.username?.charAt(0).toUpperCase() || "U"}
                         </AvatarFallback>
                       </Avatar>
                     </Button>
@@ -97,7 +122,7 @@ const Header = () => {
                           {user?.email}
                         </p>
                         <p className="text-xs text-primary font-medium">
-                          Level: {user?.level}
+                          Level: {getUserLevel(user?.ecoPoints || 0)}
                         </p>
                       </div>
                     </div>
@@ -108,7 +133,7 @@ const Header = () => {
                         Profile
                       </Link>
                     </DropdownMenuItem>
-                    {user?.role === 'admin' && (
+                    {user?.role === "admin" && (
                       <DropdownMenuItem asChild>
                         <Link href="/admin">
                           <Settings className="mr-2 h-4 w-4" />
@@ -127,7 +152,10 @@ const Header = () => {
             ) : (
               <div className="flex items-center space-x-3">
                 <Link href="/login">
-                  <Button variant="outline" className="text-primary border-primary hover:bg-primary hover:text-white">
+                  <Button
+                    variant="outline"
+                    className="text-primary border-primary hover:bg-primary hover:text-white"
+                  >
                     Login
                   </Button>
                 </Link>
@@ -139,7 +167,7 @@ const Header = () => {
               </div>
             )}
           </div>
-          
+
           {/* Mobile menu button */}
           <div className="md:hidden">
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
@@ -161,14 +189,17 @@ const Header = () => {
                     <div className="bg-gray-50 p-4 rounded-lg">
                       <div className="flex items-center space-x-3">
                         <Avatar className="h-10 w-10">
-                          <AvatarImage src={user?.profileImage} alt={user?.username} />
+                          <AvatarImage
+                            src={user?.profileImage}
+                            alt={user?.username}
+                          />
                           <AvatarFallback>
-                            {user?.username?.charAt(0).toUpperCase() || 'U'}
+                            {user?.username?.charAt(0).toUpperCase() || "U"}
                           </AvatarFallback>
                         </Avatar>
                         <div>
                           <p className="font-medium">{user?.username}</p>
-                          <p className="text-sm text-gray-600">{user?.level}</p>
+                          <p className="text-sm text-gray-600">{getUserLevel(user?.ecoPoints || 0)}</p>
                           <div className="flex items-center space-x-1 mt-1">
                             <Award className="h-3 w-3 text-amber-600" />
                             <span className="text-xs text-amber-700">
@@ -179,16 +210,16 @@ const Header = () => {
                       </div>
                     </div>
                   )}
-                  
+
                   {/* Navigation */}
                   <nav className="space-y-2">
                     {navigationItems.map((item) => (
                       <Link key={item.name} href={item.href}>
-                        <div 
+                        <div
                           className={`block py-3 px-4 rounded-lg font-medium transition-colors cursor-pointer ${
                             isActive(item.href)
-                              ? 'bg-primary text-white'
-                              : 'text-gray-700 hover:bg-gray-100'
+                              ? "bg-primary text-white"
+                              : "text-gray-700 hover:bg-gray-100"
                           }`}
                           onClick={() => setMobileMenuOpen(false)}
                         >
@@ -197,14 +228,14 @@ const Header = () => {
                       </Link>
                     ))}
                   </nav>
-                  
+
                   {/* Auth buttons */}
                   <div className="pt-4 border-t space-y-3">
                     {isAuthenticated ? (
                       <>
                         <Link href="/profile">
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             className="w-full justify-start"
                             onClick={() => setMobileMenuOpen(false)}
                           >
@@ -212,10 +243,10 @@ const Header = () => {
                             Profile
                           </Button>
                         </Link>
-                        {user?.role === 'admin' && (
+                        {user?.role === "admin" && (
                           <Link href="/admin">
-                            <Button 
-                              variant="outline" 
+                            <Button
+                              variant="outline"
                               className="w-full justify-start"
                               onClick={() => setMobileMenuOpen(false)}
                             >
@@ -224,8 +255,8 @@ const Header = () => {
                             </Button>
                           </Link>
                         )}
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           className="w-full justify-start text-red-600 border-red-200 hover:bg-red-50"
                           onClick={handleLogout}
                         >
@@ -236,8 +267,8 @@ const Header = () => {
                     ) : (
                       <>
                         <Link href="/login">
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             className="w-full"
                             onClick={() => setMobileMenuOpen(false)}
                           >
@@ -245,7 +276,7 @@ const Header = () => {
                           </Button>
                         </Link>
                         <Link href="/register">
-                          <Button 
+                          <Button
                             className="w-full bg-primary hover:bg-primary/90"
                             onClick={() => setMobileMenuOpen(false)}
                           >
